@@ -365,6 +365,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 </style>
 </head>
 <body>
+<!-- ═══════════════════════════════════════ HTML STRUCTURE ═══════════════════════════════════════ -->
 <canvas id="bg-canvas"></canvas>
 <div id="toast" role="alert" aria-live="assertive"></div>
 
@@ -377,10 +378,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 </div>
 
 <!-- Incoming call notification -->
-<div class="incoming-call-notif" id="incoming-call-notif" role="dialog" aria-modal="true" aria-label="Incoming call">
+<div class="incoming-call-notif" id="incoming-call-notif" role="dialog" aria-modal="true">
   <div class="incoming-call-header">
     <div class="incoming-call-avatar" id="ic-avatar" style="background:linear-gradient(135deg,#00ff41,#006622)">GA</div>
-    <div class="incoming-call-info">
+    <div>
       <div class="incoming-call-name" id="ic-name">OPERATIVE</div>
       <div class="incoming-call-type" id="ic-type">VOICE CALL</div>
     </div>
@@ -401,10 +402,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   </div>
   <div class="call-video-layout" id="call-video-layout" style="display:none;"></div>
   <div class="call-controls">
-    <button class="call-ctrl-btn mute-btn" id="btn-call-mute" title="Mute/Unmute" aria-label="Mute">🎤</button>
-    <button class="call-ctrl-btn cam-btn" id="btn-call-cam" title="Camera On/Off" aria-label="Toggle Camera" style="display:none;">📷</button>
-    <button class="call-ctrl-btn speaker-btn" id="btn-call-speaker" title="Speaker" aria-label="Speaker">🔊</button>
-    <button class="call-ctrl-btn end-btn" id="btn-call-end" title="End Call" aria-label="End call">📵</button>
+    <button class="call-ctrl-btn mute-btn" id="btn-call-mute" aria-label="Mute">🎤</button>
+    <button class="call-ctrl-btn cam-btn" id="btn-call-cam" aria-label="Camera" style="display:none;">📷</button>
+    <button class="call-ctrl-btn speaker-btn" id="btn-call-speaker" aria-label="Speaker">🔊</button>
+    <button class="call-ctrl-btn end-btn" id="btn-call-end" aria-label="End call">📵</button>
   </div>
 </div>
 
@@ -418,7 +419,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 </div>
 
 <!-- Lightbox -->
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true">
   <button class="lb-close" id="lb-close" aria-label="Close">✕</button>
   <img class="lb-img" id="lb-img" src="" alt="">
   <div class="lb-bar">
@@ -451,7 +452,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
       </div>
       <div class="logo-title">GALAXY RELAY</div>
       <div class="logo-sub">OMNITRIX COMMUNICATIONS</div>
-      <div class="logo-tagline">Global group chat · Voice & video calls · Voice messages</div>
+      <div class="logo-tagline">Global group chat · Voice &amp; video calls · Voice messages</div>
     </div>
     <div class="status-bar" role="status" aria-live="polite">
       <div class="status-dot wait" id="status-dot"></div>
@@ -510,9 +511,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
       </div>
     </aside>
     <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
-
     <main class="chat-main">
-      <div class="reconnect-banner" id="reconnect-banner" role="status" aria-live="polite">
+      <div class="reconnect-banner" id="reconnect-banner" role="status">
         <span class="spinner" aria-hidden="true"></span>RECONNECTING TO GALAXY RELAY...
       </div>
       <div class="chat-top-bar">
@@ -540,7 +540,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
           <circle cx="26" cy="26" r="2" fill="#ccffcc"/>
         </svg>
       </div>
-      <div class="messages-wrap" id="messages-wrap" role="log" aria-live="polite" aria-label="Chat messages">
+      <div class="messages-wrap" id="messages-wrap" role="log" aria-live="polite">
         <div class="messages-inner" id="messages-inner"></div>
       </div>
       <button class="new-msg-btn" id="new-msg-btn" aria-label="Jump to new messages">▼ NEW TRANSMISSIONS</button>
@@ -591,9 +591,17 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
     </main>
   </div>
 </div>
-
 <script>
-/* ══ SUPABASE CONFIG ══ */
+/* ════════════════════════════════════════════════════
+   GALAXY RELAY — COMPLETE JS (Part 2 of 3)
+   BUG FIXES:
+   1. VOICE MESSAGES: mediaRecorder.start(100) with timeslice,
+      requestData() before stop(), proper async chunk collection
+   2. ONLINE COUNT: presence sync rebuilt from scratch every time,
+      guaranteed to include self, renderUsers() called on every event
+   ════════════════════════════════════════════════════ */
+
+/* ══ CONFIG ══ */
 const SUPABASE_URL      = 'https://mfzgxqslnykeqfjpnrbn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1memd4cXNsbnlrZXFmanBucmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDIxMTksImV4cCI6MjA4Nzc3ODExOX0.ID0C7loFSzQ7WsRHUU7x8TpYv8gwh04oenKz5lfeVTI';
 const CHANNEL_NAME      = 'galaxy_relay_main';
@@ -604,15 +612,12 @@ const RATE_MAX          = 5;
 const RATE_WINDOW       = 6000;
 const RATE_COOLDOWN     = 3000;
 const CONT_GAP_MS       = 5 * 60 * 1000;
-const MAX_VOICE_SEC     = 120;
-// FIX: Reduced from 300KB to 150KB raw to stay safely under Supabase broadcast limit (~1MB)
-// Base64 overhead is ~33%, so 150KB raw → ~200KB base64, well within limits
-const MAX_VOICE_BYTES   = 150 * 1024;
+const MAX_VOICE_SEC     = 90;
+const MAX_VOICE_BYTES   = 120 * 1024; /* 120KB raw → ~160KB base64, safe under Supabase 1MB broadcast */
 
 const VALID_COLORS = ['#00ff41','#ff6600','#00ddff','#9900ff','#ff3333','#ffcc00'];
 const IMG_DATA_RE  = /^data:image\/(png|jpeg|gif|webp);base64,/;
-// FIX: Relaxed audio regex — readAsDataURL may produce "data:audio/webm;codecs=opus;base64,..."
-// The old strict regex /^data:audio\/(webm|ogg|mp4|mpeg|wav);base64,/ would FAIL on codec params
+/* FIX #1: Relaxed — handles codec params like "audio/webm;codecs=opus" */
 const AUDIO_DATA_RE = /^data:audio\//;
 
 const EMOJIS   = ['😀','😂','😍','🤔','😎','🥺','😭','🔥','❤️','👍','👋','🎉','✨','🙌','💯','🤩','😅','🤣','😊','🥳','💪','🚀','⭐','🌟','💡','🎯','🤝','👀','💬','🌈','💜','🩵','🫡','🥹','😤','🫶','🙏','👊','✌️','🤟','🤙','💥','🌀','⚡','🛸','👽','🌌'];
@@ -631,7 +636,7 @@ const avColors = {
 };
 const avst = c => avColors[c] || avColors['#00ff41'];
 
-/* ── STATE ── */
+/* ══ STATE ══ */
 let sb = null, ch = null, me = null;
 let users = new Map(), messages = [], typingUsers = new Map();
 let profanityOn = true, userColor = '#00ff41';
@@ -642,15 +647,18 @@ let lbStore = new Map();
 let rateLimitActive = false, msgTimestamps = [];
 let joinedChat = false, isLeavingIntentionally = false;
 
-/* ── Voice message recording state ── */
-let mediaRecorder = null, audioChunks = [], recStartTime = 0, recTimerIv = null;
-let isRecording = false;
-// FIX: Track send intent separately — was getting clobbered in edge cases
-let voiceSendIntent = false;
-// FIX: Track captured mimeType before recorder is cleaned up
-let capturedMimeType = '';
+/* ══ VOICE RECORDING STATE ══ */
+/* FIX #2: Completely rebuilt voice recording state */
+let mediaRecorder   = null;
+let audioChunks     = [];
+let recStream       = null;      /* keep stream ref separate for reliable cleanup */
+let recStartTime    = 0;
+let recTimerIv      = null;
+let isRecording     = false;
+let voiceSendIntent = false;     /* set BEFORE calling .stop() so onstop can read it */
+let capturedMime    = '';        /* MIME saved at start, not read from stopped recorder */
 
-/* ── WebRTC/Call state ── */
+/* ══ WEBRTC STATE ══ */
 let callActive = false, callType = null;
 let peerConnections = new Map();
 let localStream = null;
@@ -664,349 +672,381 @@ const ICE_SERVERS = {iceServers:[
   {urls:'stun:stun2.l.google.com:19302'}
 ]};
 
-/* ── UTILS ── */
+/* Audio storage: msgId → base64 data URL */
+const voiceAudioStore = new Map();
+/* Playback elements: msgId → HTMLAudioElement */
+const voiceAudioMap   = new Map();
+
+/* ══ UTILS ══ */
 const genId   = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36);
-const ini     = n  => (n||'?').split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+const ini     = n  => (n||'?').split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';
 const ftime   = ts => (!ts||isNaN(ts)) ? '--:--' : new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 const esc     = s  => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const fsz     = b  => b<1024 ? b+' B' : b<1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
-const sanitize= s  => String(s??'').replace(/[<>"\\`]/g,'').trim();
-const safeColor=c  => VALID_COLORS.includes(c) ? c : '#00ff41';
+const fsz     = b  => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
+const safeColor=c  => VALID_COLORS.includes(c)?c:'#00ff41';
 const cens    = t  => {
-  if(!t || !profanityOn) return t||'';
-  let r = String(t);
+  if(!t||!profanityOn) return t||'';
+  let r=String(t);
   PROFANITY.forEach(w=>{r=r.replace(new RegExp(`\\b${w}\\b`,'gi'),m=>m[0]+'*'.repeat(m.length-1));});
   return r;
 };
 const sanitizeUser = u => ({
   id      : String(u.id||'').slice(0,40),
-  name    : String(u.name||'OPERATIVE').trim().replace(/[<>"\\`]/g,'').slice(0,20) || 'OPERATIVE',
+  name    : String(u.name||'OPERATIVE').trim().replace(/[<>"\\`]/g,'').slice(0,20)||'OPERATIVE',
   color   : safeColor(u.color),
   status  : String(u.status||'').trim().replace(/[<>"\\`]/g,'').slice(0,60),
-  joinedAt: typeof u.joinedAt==='number' && u.joinedAt>0 ? u.joinedAt : Date.now()
+  joinedAt: typeof u.joinedAt==='number'&&u.joinedAt>0?u.joinedAt:Date.now()
 });
 
 let toastT;
-const toast = (msg, d=3000) => {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.style.opacity = '1';
-  clearTimeout(toastT);
-  toastT = setTimeout(() => t.style.opacity = '0', d);
+const toast = (msg,d=3000) => {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(toastT); toastT=setTimeout(()=>t.style.opacity='0',d);
 };
 
-/* ── Rate limit ── */
+/* ══ RATE LIMIT ══ */
 function checkRate(){
   if(rateLimitActive) return false;
-  const now = Date.now();
-  msgTimestamps = msgTimestamps.filter(t => now - t < RATE_WINDOW);
-  if(msgTimestamps.length >= RATE_MAX){ triggerRateLimit(); return false; }
-  msgTimestamps.push(now);
-  return true;
+  const now=Date.now();
+  msgTimestamps=msgTimestamps.filter(t=>now-t<RATE_WINDOW);
+  if(msgTimestamps.length>=RATE_MAX){triggerRateLimit();return false;}
+  msgTimestamps.push(now); return true;
 }
 function triggerRateLimit(){
   if(rateLimitActive) return;
-  rateLimitActive = true;
-  const ov = document.getElementById('rate-overlay'), bar = document.getElementById('rate-bar');
-  ov.classList.add('show'); bar.style.width = '0%';
-  let e = 0;
-  const iv = setInterval(() => {
-    e += 60; bar.style.width = Math.min(e / RATE_COOLDOWN * 100, 100) + '%';
-    if(e >= RATE_COOLDOWN){
-      clearInterval(iv); ov.classList.remove('show'); rateLimitActive = false;
-      bar.style.width = '0%'; document.getElementById('msg-input').focus();
-    }
-  }, 60);
+  rateLimitActive=true;
+  const ov=document.getElementById('rate-overlay'),bar=document.getElementById('rate-bar');
+  ov.classList.add('show'); bar.style.width='0%';
+  let e=0;
+  const iv=setInterval(()=>{
+    e+=60; bar.style.width=Math.min(e/RATE_COOLDOWN*100,100)+'%';
+    if(e>=RATE_COOLDOWN){clearInterval(iv);ov.classList.remove('show');rateLimitActive=false;bar.style.width='0%';document.getElementById('msg-input').focus();}
+  },60);
 }
 
-/* ── Background canvas ── */
-(() => {
-  const cv = document.getElementById('bg-canvas'), ctx = cv.getContext('2d');
-  let W, H, aid;
-  const rsz = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; };
-  rsz();
-  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(rsz, 150); });
-  const st = Array.from({length:180}, () => ({
-    x:Math.random()*2-1, y:Math.random()*2-1, z:Math.random(),
-    sz:Math.random()*1.4+0.3, vz:-0.0008-Math.random()*0.001,
+/* ══ BACKGROUND CANVAS ══ */
+(()=>{
+  const cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');
+  let W,H,aid;
+  const rsz=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;};
+  rsz(); let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(rsz,150);});
+  const st=Array.from({length:180},()=>({
+    x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random(),
+    sz:Math.random()*1.4+0.3,vz:-0.0008-Math.random()*0.001,
     c:Math.random()>.7?'0,255,65':Math.random()>.5?'0,221,255':'200,255,200'
   }));
-  const pr = s => { const k=1/(s.z+.001); return {px:(s.x*k*.5+.5)*W, py:(s.y*k*.5+.5)*H, r:s.sz*k*.5}; };
+  const pr=s=>{const k=1/(s.z+.001);return{px:(s.x*k*.5+.5)*W,py:(s.y*k*.5+.5)*H,r:s.sz*k*.5};};
   function draw(){
     ctx.clearRect(0,0,W,H);
-    st.forEach(s => {
-      s.z += s.vz;
-      if(s.z <= 0 || s.z > 1){ s.z=1; s.x=Math.random()*2-1; s.y=Math.random()*2-1; }
-      const {px,py,r} = pr(s);
-      if(px<0||px>W||py<0||py>H) return;
-      ctx.beginPath(); ctx.arc(px,py,Math.max(r,.3),0,Math.PI*2);
-      ctx.fillStyle = `rgba(${s.c},${.4+r*.3})`; ctx.fill();
+    st.forEach(s=>{
+      s.z+=s.vz;
+      if(s.z<=0||s.z>1){s.z=1;s.x=Math.random()*2-1;s.y=Math.random()*2-1;}
+      const{px,py,r}=pr(s);
+      if(px<0||px>W||py<0||py>H)return;
+      ctx.beginPath();ctx.arc(px,py,Math.max(r,.3),0,Math.PI*2);
+      ctx.fillStyle=`rgba(${s.c},${.4+r*.3})`;ctx.fill();
     });
-    aid = requestAnimationFrame(draw);
+    aid=requestAnimationFrame(draw);
   }
   draw();
-  document.addEventListener('visibilitychange', () => { if(document.hidden) cancelAnimationFrame(aid); else draw(); });
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelAnimationFrame(aid);else draw();});
 })();
 
-/* ── Color picker ── */
-document.querySelectorAll('.color-opt').forEach(o => {
-  const sel = x => {
-    document.querySelectorAll('.color-opt').forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked','false'); });
-    x.classList.add('selected'); x.setAttribute('aria-checked','true');
-    userColor = safeColor(x.dataset.color);
+/* ══ COLOR PICKER ══ */
+document.querySelectorAll('.color-opt').forEach(o=>{
+  const sel=x=>{
+    document.querySelectorAll('.color-opt').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-checked','false');});
+    x.classList.add('selected');x.setAttribute('aria-checked','true');
+    userColor=safeColor(x.dataset.color);
   };
-  o.addEventListener('click', () => sel(o));
-  o.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); sel(o); } });
+  o.addEventListener('click',()=>sel(o));
+  o.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();sel(o);}});
 });
 
-/* ── Status helpers ── */
-function setStatus(state, msg){
-  const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
-  if(!dot||!txt) return;
-  dot.className = 'status-dot ' + state;
-  txt.textContent = msg;
-  txt.style.color = state==='ok' ? 'var(--omni)' : state==='err' ? 'var(--red)' : 'var(--text-dim)';
+/* ══ STATUS HELPERS ══ */
+function setStatus(state,msg){
+  const dot=document.getElementById('status-dot'),txt=document.getElementById('status-text');
+  if(!dot||!txt)return;
+  dot.className='status-dot '+state;
+  txt.textContent=msg;
+  txt.style.color=state==='ok'?'var(--omni)':state==='err'?'var(--red)':'var(--text-dim)';
 }
 function setLive(s){
-  const p = document.getElementById('live-pill'), l = document.getElementById('live-label');
-  if(!p||!l) return;
-  p.className = 'live-pill' + (s==='offline'?' offline' : s==='connecting'?' wait':'');
-  l.textContent = s==='live' ? 'LIVE' : s==='offline' ? 'OFFLINE' : 'CONNECTING';
+  const p=document.getElementById('live-pill'),l=document.getElementById('live-label');
+  if(!p||!l)return;
+  p.className='live-pill'+(s==='offline'?' offline':s==='connecting'?' wait':'');
+  l.textContent=s==='live'?'LIVE':s==='offline'?'OFFLINE':'CONNECTING';
 }
 
 /* ══ SUPABASE INIT ══ */
 async function initSB(){
   setStatus('wait','CONNECTING...');
   try{
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    await new Promise((res, rej) => {
-      const pingName = '__ping__' + Date.now();
-      const t = sb.channel(pingName);
-      const to = setTimeout(() => { try{ sb.removeChannel(t); }catch(e){} rej(new Error('timeout')); }, 9000);
-      t.subscribe(s => {
-        clearTimeout(to); try{ sb.removeChannel(t); }catch(e){}
-        s === 'SUBSCRIBED' ? res() : rej(new Error('Ping: ' + s));
-      });
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    await new Promise((res,rej)=>{
+      const pn='__ping__'+Date.now(),t=sb.channel(pn);
+      const to=setTimeout(()=>{try{sb.removeChannel(t);}catch(e){}rej(new Error('timeout'));},9000);
+      t.subscribe(s=>{clearTimeout(to);try{sb.removeChannel(t);}catch(e){}s==='SUBSCRIBED'?res():rej(new Error(s));});
     });
     setStatus('ok','RELAY ONLINE ✓');
-    document.getElementById('online-hint').innerHTML = 'Galaxy Relay is <span>LIVE</span> — enter your callsign!';
-    document.getElementById('btn-join').disabled = false;
+    document.getElementById('online-hint').innerHTML='Galaxy Relay is <span>LIVE</span> — enter your callsign!';
+    document.getElementById('btn-join').disabled=false;
     document.getElementById('inp-name').focus();
   }catch(e){
     setStatus('err','CONNECTION FAILED — CHECK INTERNET');
-    document.getElementById('online-hint').textContent = 'Could not reach relay. Reload to try again.';
-    document.getElementById('btn-join').disabled = false;
-    console.error('[GR] init:', e);
+    document.getElementById('online-hint').textContent='Could not reach relay. Reload to try again.';
+    document.getElementById('btn-join').disabled=false;
+    console.error('[GR] init:',e);
   }
 }
 initSB();
 
 /* ══ JOIN ══ */
-document.getElementById('btn-join').addEventListener('click', doJoin);
-document.getElementById('inp-name').addEventListener('keypress', e => { if(e.key==='Enter') doJoin(); });
-document.getElementById('inp-status').addEventListener('keypress', e => { if(e.key==='Enter') doJoin(); });
+document.getElementById('btn-join').addEventListener('click',doJoin);
+document.getElementById('inp-name').addEventListener('keypress',e=>{if(e.key==='Enter')doJoin();});
+document.getElementById('inp-status').addEventListener('keypress',e=>{if(e.key==='Enter')doJoin();});
 
 function doJoin(){
-  if(joinedChat) return;
-  const name = document.getElementById('inp-name').value.trim().replace(/\s+/g,' ').replace(/[<>"\\`]/g,'').slice(0,20);
-  const errEl = document.getElementById('err-name');
-  if(name.length < 2){
+  if(joinedChat)return;
+  const name=document.getElementById('inp-name').value.trim().replace(/\s+/g,' ').replace(/[<>"\\`]/g,'').slice(0,20);
+  const errEl=document.getElementById('err-name');
+  if(name.length<2){
     errEl.classList.add('show');
-    const inp = document.getElementById('inp-name'); inp.classList.add('shake'); inp.focus();
-    setTimeout(() => inp.classList.remove('shake'), 450);
-    return;
+    const inp=document.getElementById('inp-name');inp.classList.add('shake');inp.focus();
+    setTimeout(()=>inp.classList.remove('shake'),450);return;
   }
   errEl.classList.remove('show');
-  if(!sb){ toast('NOT CONNECTED — WAIT OR RELOAD'); return; }
-  joinedChat = true; document.getElementById('btn-join').disabled = true;
-  const status = document.getElementById('inp-status').value.trim().replace(/[<>"\\`]/g,'').slice(0,60);
-  me = { id:genId(), name, color:safeColor(userColor), status, joinedAt:Date.now() };
+  if(!sb){toast('NOT CONNECTED — WAIT OR RELOAD');return;}
+  joinedChat=true;document.getElementById('btn-join').disabled=true;
+  const status=document.getElementById('inp-status').value.trim().replace(/[<>"\\`]/g,'').slice(0,60);
+  me={id:genId(),name,color:safeColor(userColor),status,joinedAt:Date.now()};
   document.getElementById('join-screen').classList.add('exit');
-  const cr = document.getElementById('chatroom'); cr.style.display = 'flex';
-  setTimeout(() => cr.classList.add('visible'), 10);
+  const cr=document.getElementById('chatroom');cr.style.display='flex';
+  setTimeout(()=>cr.classList.add('visible'),10);
   setupChannel();
-  setTimeout(() => document.getElementById('msg-input').focus(), 600);
+  setTimeout(()=>document.getElementById('msg-input').focus(),600);
 }
 
-/* ══ CHANNEL SETUP ══ */
+/* ══════════════════════════════════════════════════════
+   CHANNEL SETUP — FIX #3: ONLINE COUNT ALWAYS SHOWS 1
+   
+   Root cause: The old code did `users = nu` in sync but
+   then immediately set `nu.set(me.id, me)` — however the
+   presence state from Supabase on first sync only contains
+   OTHER users, not necessarily self. The fix is:
+   1. ALWAYS add self (me) to the map after rebuilding from state
+   2. Call renderUsers() unconditionally on every presence event
+   3. Use proper deep rebuild: clear + repopulate from presenceState()
+══════════════════════════════════════════════════════ */
 function setupChannel(){
-  if(ch){ try{ sb.removeChannel(ch); }catch(e){} ch = null; }
-  ch = sb.channel(CHANNEL_NAME, {config:{presence:{key:me.id}, broadcast:{self:false}}});
+  if(ch){try{sb.removeChannel(ch);}catch(e){}ch=null;}
+  ch=sb.channel(CHANNEL_NAME,{config:{presence:{key:me.id},broadcast:{self:false}}});
 
-  ch.on('presence','sync', () => {
-    const state = ch.presenceState(), nu = new Map();
-    Object.values(state).forEach(arr => arr.forEach(p => { if(p.user && typeof p.user.id==='string') nu.set(p.user.id, sanitizeUser(p.user)); }));
-    nu.set(me.id, {...me}); users = nu; renderUsers(); updateSub();
-  });
-  ch.on('presence','join', ({newPresences:np}) => {
-    np.forEach(p => {
-      if(!p.user || typeof p.user.id!=='string' || p.user.id===me.id) return;
-      const u = sanitizeUser(p.user); users.set(u.id, u);
-      addSys(`<span style="color:${u.color}">${esc(u.name)}</span> JOINED THE GALAXY RELAY`);
-      bump();
+  /* FIX: Rebuild users map completely from presenceState on every sync */
+  ch.on('presence','sync',()=>{
+    const state=ch.presenceState();
+    const nu=new Map();
+    /* Add self first — guaranteed */
+    nu.set(me.id,{...me});
+    /* Add everyone from presence state */
+    Object.values(state).forEach(arr=>{
+      arr.forEach(p=>{
+        if(p.user&&typeof p.user.id==='string'&&p.user.id!==me.id){
+          nu.set(p.user.id,sanitizeUser(p.user));
+        }
+      });
     });
-    renderUsers(true); updateSub();
-  });
-  ch.on('presence','leave', ({leftPresences:lp}) => {
-    lp.forEach(p => {
-      if(!p.user || typeof p.user.id!=='string' || p.user.id===me.id) return;
-      const u = users.get(p.user.id);
-      if(u){ users.delete(p.user.id); stopTyping(p.user.id); addSys(`<span style="color:${u.color}">${esc(u.name)}</span> DISCONNECTED`); }
-    });
-    renderUsers(); updateSub();
+    users=nu;
+    renderUsers();
+    updateSub();
   });
 
-  ch.on('broadcast',{event:'message'},     ({payload}) => { if(payload?.msg) onMsg(payload.msg); });
-  ch.on('broadcast',{event:'typing'},      ({payload}) => { if(payload?.userId && payload.userId!==me.id) onTyping(payload.userId); });
-  ch.on('broadcast',{event:'stop_typing'}, ({payload}) => { if(payload?.userId) stopTyping(payload.userId); });
-  ch.on('broadcast',{event:'reaction'},    ({payload}) => { if(payload?.msgId && REACT_EMOJIS.includes(payload.emoji) && payload.userId) onReaction(payload.msgId, payload.emoji, payload.userId); });
+  ch.on('presence','join',({newPresences:np})=>{
+    /* FIX: Always ensure self is in map */
+    users.set(me.id,{...me});
+    np.forEach(p=>{
+      if(!p.user||typeof p.user.id!=='string'||p.user.id===me.id)return;
+      const u=sanitizeUser(p.user);
+      /* Only show join message if genuinely new */
+      if(!users.has(u.id)){
+        users.set(u.id,u);
+        addSys(`<span style="color:${u.color}">${esc(u.name)}</span> JOINED THE GALAXY RELAY`);
+        bump();
+      } else {
+        users.set(u.id,u); /* update existing */
+      }
+    });
+    renderUsers();
+    updateSub();
+  });
+
+  ch.on('presence','leave',({leftPresences:lp})=>{
+    lp.forEach(p=>{
+      if(!p.user||typeof p.user.id!=='string'||p.user.id===me.id)return;
+      const u=users.get(p.user.id);
+      if(u){users.delete(p.user.id);stopTyping(p.user.id);addSys(`<span style="color:${u.color}">${esc(u.name)}</span> DISCONNECTED`);}
+    });
+    /* FIX: Always keep self */
+    users.set(me.id,{...me});
+    renderUsers();
+    updateSub();
+  });
+
+  ch.on('broadcast',{event:'message'},    ({payload})=>{if(payload?.msg)onMsg(payload.msg);});
+  ch.on('broadcast',{event:'typing'},     ({payload})=>{if(payload?.userId&&payload.userId!==me.id)onTyping(payload.userId);});
+  ch.on('broadcast',{event:'stop_typing'},({payload})=>{if(payload?.userId)stopTyping(payload.userId);});
+  ch.on('broadcast',{event:'reaction'},   ({payload})=>{if(payload?.msgId&&REACT_EMOJIS.includes(payload.emoji)&&payload.userId)onReaction(payload.msgId,payload.emoji,payload.userId);});
 
   /* WebRTC signaling */
-  ch.on('broadcast',{event:'call_offer'},   ({payload}) => { if(payload?.to===me.id) onCallOffer(payload); });
-  ch.on('broadcast',{event:'call_answer'},  ({payload}) => { if(payload?.to===me.id) onCallAnswer(payload); });
-  ch.on('broadcast',{event:'call_ice'},     ({payload}) => { if(payload?.to===me.id) onCallIce(payload); });
-  // FIX: call_join now only triggers offers from the side with the lexicographically larger ID
-  // to prevent both peers creating offers simultaneously (signaling collision)
-  ch.on('broadcast',{event:'call_join'},    ({payload}) => { if(payload?.from && payload.from!==me.id) onCallJoin(payload); });
-  ch.on('broadcast',{event:'call_leave'},   ({payload}) => { if(payload?.from && payload.from!==me.id) onCallRemoteLeave(payload.from); });
-  ch.on('broadcast',{event:'call_invite'},  ({payload}) => { if(payload?.from!==me.id) onCallInvite(payload); });
+  ch.on('broadcast',{event:'call_offer'},  ({payload})=>{if(payload?.to===me.id)onCallOffer(payload);});
+  ch.on('broadcast',{event:'call_answer'}, ({payload})=>{if(payload?.to===me.id)onCallAnswer(payload);});
+  ch.on('broadcast',{event:'call_ice'},    ({payload})=>{if(payload?.to===me.id)onCallIce(payload);});
+  ch.on('broadcast',{event:'call_join'},   ({payload})=>{if(payload?.from&&payload.from!==me.id)onCallJoin(payload);});
+  ch.on('broadcast',{event:'call_leave'},  ({payload})=>{if(payload?.from&&payload.from!==me.id)onCallRemoteLeave(payload.from);});
+  ch.on('broadcast',{event:'call_invite'}, ({payload})=>{if(payload?.from!==me.id)onCallInvite(payload);});
 
-  ch.subscribe(async s => {
-    if(s === 'SUBSCRIBED'){
-      setLive('live'); document.getElementById('reconnect-banner').classList.remove('show');
-      try{ await ch.track({user:{...me}}); }catch(e){ console.warn('[GR] track:',e); }
-      users.set(me.id, {...me}); renderUsers(); updateSub();
+  ch.subscribe(async s=>{
+    if(s==='SUBSCRIBED'){
+      setLive('live');document.getElementById('reconnect-banner').classList.remove('show');
+      try{await ch.track({user:{...me}});}catch(e){console.warn('[GR] track:',e);}
+      /* FIX: Ensure self is always in map after track */
+      users.set(me.id,{...me});
+      renderUsers();updateSub();
       addSys(`OPERATIVE <span style="color:${me.color}">${esc(me.name)}</span> CONNECTED TO GALAXY RELAY`);
-    } else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(s)){
-      setLive('offline'); if(!isLeavingIntentionally) document.getElementById('reconnect-banner').classList.add('show');
-    } else if(s === 'CONNECTING'){
-      setLive('connecting');
-    }
+    }else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(s)){
+      setLive('offline');if(!isLeavingIntentionally)document.getElementById('reconnect-banner').classList.add('show');
+    }else if(s==='CONNECTING'){setLive('connecting');}
   });
 }
 
-const bcast = (ev, pl) => {
-  if(!ch || !me) return;
-  ch.send({type:'broadcast', event:ev, payload:pl}).catch(e => console.warn('[GR] bcast:', e));
-};
+const bcast=(ev,pl)=>{if(!ch||!me)return;ch.send({type:'broadcast',event:ev,payload:pl}).catch(e=>console.warn('[GR] bcast:',e));};
 
-/* ══ USERS ══ */
+/* ══ USERS RENDER ══ */
 function renderUsers(newOnly=false){
-  const list = document.getElementById('user-list');
-  document.getElementById('online-badge').textContent = users.size;
+  const list=document.getElementById('user-list');
+  /* FIX: Always use users.size for the badge — it always includes self */
+  const badge=document.getElementById('online-badge');
+  badge.textContent=users.size;
+
   if(newOnly){
-    const existing = new Set([...list.querySelectorAll('.user-item')].map(el=>el.dataset.uid));
-    const sorted = [...users.values()].sort((a,b) => a.joinedAt - b.joinedAt);
-    sorted.forEach(u => {
+    const existing=new Set([...list.querySelectorAll('.user-item')].map(el=>el.dataset.uid));
+    const sorted=[...users.values()].sort((a,b)=>a.joinedAt-b.joinedAt);
+    sorted.forEach(u=>{
       if(!existing.has(u.id)){
-        const div = makeUserEl(u, true);
-        const after = [...list.querySelectorAll('.user-item')].find(el => { const eu=users.get(el.dataset.uid); return eu && eu.joinedAt>u.joinedAt; });
-        if(after) list.insertBefore(div, after); else list.appendChild(div);
+        const div=makeUserEl(u,true);
+        const after=[...list.querySelectorAll('.user-item')].find(el=>{const eu=users.get(el.dataset.uid);return eu&&eu.joinedAt>u.joinedAt;});
+        if(after)list.insertBefore(div,after);else list.appendChild(div);
       }
     });
     return;
   }
-  list.innerHTML = '';
-  [...users.values()].sort((a,b) => a.joinedAt - b.joinedAt).forEach(u => list.appendChild(makeUserEl(u, false)));
+  list.innerHTML='';
+  [...users.values()].sort((a,b)=>a.joinedAt-b.joinedAt).forEach(u=>list.appendChild(makeUserEl(u,false)));
 }
-function makeUserEl(u, animate){
-  const isMe = u.id === me?.id;
-  const inCall = callActive && peerConnections.has(u.id);
-  const div = document.createElement('div');
-  div.className = 'user-item' + (animate?' new-entry':'');
-  div.dataset.uid = u.id; div.setAttribute('role','listitem');
-  div.innerHTML =
-    `<div class="user-avatar" style="${avst(u.color)}" aria-hidden="true">${esc(ini(u.name))}<div class="user-dot${inCall?' in-call':''}"></div></div>` +
-    `<div class="user-info"><div class="user-name-text">${esc(u.name)}${isMe ? '<span class="you-tag">[YOU]</span>' : ''}</div>` +
-    (u.status ? `<div class="user-status-text">${esc(u.status)}</div>` : '') +
+
+function makeUserEl(u,animate){
+  const isMe=u.id===me?.id;
+  const div=document.createElement('div');
+  div.className='user-item'+(animate?' new-entry':'');
+  div.dataset.uid=u.id;div.setAttribute('role','listitem');
+  div.innerHTML=
+    `<div class="user-avatar" style="${avst(u.color)}" aria-hidden="true">${esc(ini(u.name))}<div class="user-dot"></div></div>`+
+    `<div class="user-info"><div class="user-name-text">${esc(u.name)}${isMe?'<span class="you-tag">[YOU]</span>':''}</div>`+
+    (u.status?`<div class="user-status-text">${esc(u.status)}</div>`:'')+
     `</div>`;
   return div;
 }
+
 function updateSub(){
-  const c = users.size;
-  document.getElementById('chat-sub').textContent = `${c} OPERATIVE${c!==1?'S':''} ONLINE` + (callActive ? ` · ${callType?.toUpperCase()} CALL ACTIVE` : '');
+  const c=users.size;
+  document.getElementById('chat-sub').textContent=`${c} OPERATIVE${c!==1?'S':''} ONLINE`+(callActive?` · ${callType?.toUpperCase()} CALL ACTIVE`:'');
 }
 function bump(){
-  const b = document.getElementById('online-badge');
-  if(b){ b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+  const b=document.getElementById('online-badge');
+  if(b){b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');}
 }
 
 /* ══ MESSAGES ══ */
 function addSys(html){
-  const w = document.getElementById('messages-inner'), d = document.createElement('div');
-  d.className = 'sys-msg'; d.innerHTML = html;
-  w.appendChild(d); lastUid = null; lastType = 'sys'; lastMsgTs = 0;
-  prune(); scroll();
+  const w=document.getElementById('messages-inner'),d=document.createElement('div');
+  d.className='sys-msg';d.innerHTML=html;
+  w.appendChild(d);lastUid=null;lastType='sys';lastMsgTs=0;
+  prune();scroll();
 }
+
 function addMsg(msg){
-  if(!msg?.id || messages.some(m => m.id===msg.id)) return;
-  messages.push(msg); renderMsg(msg); prune();
+  if(!msg?.id||messages.some(m=>m.id===msg.id))return;
+  messages.push(msg);renderMsg(msg);prune();
 }
+
 function onMsg(msg){
-  if(!msg?.id || typeof msg.id!=='string') return;
-  if(messages.some(m => m.id===msg.id)) return;
-  if(!msg.userId || !msg.name) return;
-  if(msg.type==='image' && (!msg.imgData || !IMG_DATA_RE.test(String(msg.imgData)))) return;
-  if(msg.type==='sticker' && !STICKERS.includes(String(msg.emoji||''))) return;
-  // FIX: Use relaxed AUDIO_DATA_RE — original strict regex failed on codec params like audio/webm;codecs=opus
-  if(msg.type==='voice' && (!msg.audioData || !AUDIO_DATA_RE.test(String(msg.audioData)))) return;
-  if(!msg.type && !String(msg.text||'').trim()) return;
-  messages.push(msg); renderMsg(msg); prune(); stopTyping(msg.userId);
-  if(userScrolled) document.getElementById('new-msg-btn').style.display = 'block';
+  if(!msg?.id||typeof msg.id!=='string')return;
+  if(messages.some(m=>m.id===msg.id))return;
+  if(!msg.userId||!msg.name)return;
+  if(msg.type==='image'&&(!msg.imgData||!IMG_DATA_RE.test(String(msg.imgData))))return;
+  if(msg.type==='sticker'&&!STICKERS.includes(String(msg.emoji||'')))return;
+  /* FIX: Relaxed audio check — handles codec params */
+  if(msg.type==='voice'&&(!msg.audioData||!AUDIO_DATA_RE.test(String(msg.audioData))))return;
+  if(!msg.type&&!String(msg.text||'').trim())return;
+  messages.push(msg);renderMsg(msg);prune();stopTyping(msg.userId);
+  if(userScrolled)document.getElementById('new-msg-btn').style.display='block';
 }
 
 function renderMsg(msg){
-  if(!msg?.id) return;
-  const w = document.getElementById('messages-inner');
-  const self = msg.userId === me?.id;
-  const msgColor = safeColor(msg.color);
-  const ts = typeof msg.ts==='number' ? msg.ts : 0;
-  const cont = lastUid===msg.userId && lastType==='msg' && ts>0 && lastMsgTs>0 && (ts-lastMsgTs) < CONT_GAP_MS;
-  lastUid = msg.userId; lastType = 'msg'; lastMsgTs = ts;
+  if(!msg?.id)return;
+  const w=document.getElementById('messages-inner');
+  const self=msg.userId===me?.id;
+  const msgColor=safeColor(msg.color);
+  const ts=typeof msg.ts==='number'?msg.ts:0;
+  const cont=lastUid===msg.userId&&lastType==='msg'&&ts>0&&lastMsgTs>0&&(ts-lastMsgTs)<CONT_GAP_MS;
+  lastUid=msg.userId;lastType='msg';lastMsgTs=ts;
 
-  const div = document.createElement('div');
-  div.className = 'msg-group' + (cont?' continued':'') + (self?' msg-own':'');
-  div.dataset.msgId = msg.id;
+  const div=document.createElement('div');
+  div.className='msg-group'+(cont?' continued':'')+(self?' msg-own':'');
+  div.dataset.msgId=msg.id;
 
-  let inner = '';
-  const isTrans = msg.type==='sticker' || msg.type==='voice';
+  let inner='';
+  const isTrans=msg.type==='sticker'||msg.type==='voice';
 
-  if(msg.type === 'image' && msg.imgData){
-    const src = String(msg.imgData);
-    if(!IMG_DATA_RE.test(src)) return;
+  if(msg.type==='image'&&msg.imgData){
+    const src=String(msg.imgData);
+    if(!IMG_DATA_RE.test(src))return;
     pruneLbStore();
-    lbStore.set(msg.id, {src, sender:String(msg.name||'OPERATIVE').trim().slice(0,20), color:msgColor, caption:String(msg.text||'').slice(0,200), ts, name:String(msg.imgName||'image.jpg').slice(0,60)});
-    const cap = msg.text ? `<div style="font-size:13px;color:var(--text);margin-top:5px;word-break:break-word">${esc(cens(String(msg.text).slice(0,200)))}</div>` : '';
-    inner = `<div class="lb-trigger" data-msg-id="${esc(msg.id)}" role="button" tabindex="0" aria-label="View image" style="display:inline-block;cursor:pointer;max-width:240px;border-radius:4px;overflow:hidden;border:1px solid rgba(0,255,65,0.15)"><img style="display:block;max-width:240px;max-height:260px;width:100%;object-fit:cover" src="${esc(src)}" alt="${esc(String(msg.imgName||'Image'))}" loading="lazy"></div>${cap}`;
-  } else if(msg.type === 'sticker'){
-    const emoji = String(msg.emoji||'');
-    if(!STICKERS.includes(emoji)) return;
-    inner = `<div class="msg-sticker" aria-label="Sticker: ${emoji}" role="img">${emoji}</div>`;
-  } else if(msg.type === 'voice'){
-    // FIX: Use relaxed audio validation
-    const src = String(msg.audioData);
-    if(!AUDIO_DATA_RE.test(src)) return;
-    const dur = String(msg.duration||'0:00').slice(0,6);
-    const wfBars = Array.from({length:28}, (_,i) =>
-      `<div class="wf-bar" id="wfb-${esc(msg.id)}-${i}" style="height:${4+Math.floor(Math.random()*20)}px"></div>`
+    lbStore.set(msg.id,{src,sender:String(msg.name||'OPERATIVE').trim().slice(0,20),color:msgColor,caption:String(msg.text||'').slice(0,200),ts,name:String(msg.imgName||'image.jpg').slice(0,60)});
+    const cap=msg.text?`<div style="font-size:13px;color:var(--text);margin-top:5px;word-break:break-word">${esc(cens(String(msg.text).slice(0,200)))}</div>`:'';
+    inner=`<div class="lb-trigger" data-msg-id="${esc(msg.id)}" role="button" tabindex="0" aria-label="View image" style="display:inline-block;cursor:pointer;max-width:240px;border-radius:4px;overflow:hidden;border:1px solid rgba(0,255,65,0.15)"><img style="display:block;max-width:240px;max-height:260px;width:100%;object-fit:cover" src="${esc(src)}" alt="Image" loading="lazy"></div>${cap}`;
+
+  }else if(msg.type==='sticker'){
+    const emoji=String(msg.emoji||'');
+    if(!STICKERS.includes(emoji))return;
+    inner=`<div class="msg-sticker" aria-label="Sticker: ${emoji}" role="img">${emoji}</div>`;
+
+  }else if(msg.type==='voice'){
+    const src=String(msg.audioData);
+    if(!AUDIO_DATA_RE.test(src))return;
+    /* Store audio separately — do NOT put base64 in HTML attribute */
+    voiceAudioStore.set(msg.id,src);
+    const dur=String(msg.duration||'0:00').slice(0,6);
+    const wfBars=Array.from({length:28},(_,i)=>
+      `<div class="wf-bar" id="wfb-${esc(msg.id)}-${i}" style="height:${4+Math.floor(Math.abs(Math.sin(i*0.7))*18)}px"></div>`
     ).join('');
-    // FIX: Pass src as a data attribute instead of inline JS param to avoid encoding issues with special chars in base64
-    inner = `<div class="voice-msg-wrap">
+    inner=`<div class="voice-msg-wrap">
       <button class="btn-play-voice" data-voice-id="${esc(msg.id)}" aria-label="Play voice message">▶</button>
       <div class="voice-waveform" id="vwf-${esc(msg.id)}">${wfBars}</div>
-      <span class="voice-dur">${esc(dur)}</span>
+      <span class="voice-dur" id="vdur-${esc(msg.id)}">${esc(dur)}</span>
     </div>`;
-    // Store audio src separately to avoid XSS and encoding issues in attributes
-    voiceAudioStore.set(msg.id, src);
-  } else {
-    const raw = String(msg.text||'');
-    if(!raw.trim()) return;
-    inner = esc(cens(raw.slice(0,MAX_MSG_LEN)));
+
+  }else{
+    const raw=String(msg.text||'');
+    if(!raw.trim())return;
+    inner=esc(cens(raw.slice(0,MAX_MSG_LEN)));
   }
 
-  if(!inner) return;
-  inner += `<button class="react-btn" data-msg-id="${esc(msg.id)}" aria-label="Add reaction">REACT</button>`;
+  if(!inner)return;
+  inner+=`<button class="react-btn" data-msg-id="${esc(msg.id)}" aria-label="Add reaction">REACT</button>`;
 
-  div.innerHTML = `
+  div.innerHTML=`
     <div class="msg-avatar" style="${avst(msgColor)}" aria-hidden="true">${esc(ini(String(msg.name||'?').slice(0,20)))}</div>
     <div class="msg-body">
       <div class="msg-meta">
@@ -1020,998 +1060,1040 @@ function renderMsg(msg){
   w.appendChild(div);
 
   /* Wire events */
-  const bbl = document.getElementById('b-' + CSS.escape(msg.id));
+  const bbl=document.getElementById('b-'+CSS.escape(msg.id));
   if(bbl){
-    bbl.querySelectorAll('.lb-trigger').forEach(el => {
-      const open = () => { const d = lbStore.get(el.dataset.msgId); if(d) openLb(d); };
-      el.addEventListener('click', open);
-      el.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); open(); } });
+    bbl.querySelectorAll('.lb-trigger').forEach(el=>{
+      const open=()=>{const d=lbStore.get(el.dataset.msgId);if(d)openLb(d);};
+      el.addEventListener('click',open);
+      el.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();open();}});
     });
-    // FIX: Wire voice play buttons using stored audio data instead of inline onclick
-    bbl.querySelectorAll('.btn-play-voice').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const vid = btn.dataset.voiceId;
-        const src = voiceAudioStore.get(vid);
-        if(src) playVoice(vid, btn, src);
+    /* Voice play button — reads from voiceAudioStore, never from HTML attr */
+    bbl.querySelectorAll('.btn-play-voice').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const vid=btn.dataset.voiceId;
+        const src=voiceAudioStore.get(vid);
+        if(src)playVoice(vid,btn,src);
         else toast('AUDIO UNAVAILABLE');
       });
     });
-    bbl.querySelectorAll('.react-btn').forEach(btn => {
-      btn.addEventListener('click', e => { e.stopPropagation(); openReactMenu(btn.dataset.msgId, btn); });
+    bbl.querySelectorAll('.react-btn').forEach(btn=>{
+      btn.addEventListener('click',e=>{e.stopPropagation();openReactMenu(btn.dataset.msgId,btn);});
     });
-    let lpT = null;
-    bbl.addEventListener('touchstart', () => { lpT = setTimeout(() => { bbl.classList.add('touch-active'); setTimeout(() => bbl.classList.remove('touch-active'), 3000); }, 500); }, {passive:true});
-    bbl.addEventListener('touchend',  () => clearTimeout(lpT), {passive:true});
-    bbl.addEventListener('touchmove', () => clearTimeout(lpT), {passive:true});
+    /* Long-press to react on mobile */
+    let lpT=null;
+    bbl.addEventListener('touchstart',()=>{lpT=setTimeout(()=>{bbl.classList.add('touch-active');setTimeout(()=>bbl.classList.remove('touch-active'),3000);},500);},{passive:true});
+    bbl.addEventListener('touchend',()=>clearTimeout(lpT),{passive:true});
+    bbl.addEventListener('touchmove',()=>clearTimeout(lpT),{passive:true});
   }
   scroll();
 }
 
-// FIX: Separate storage for voice audio data to avoid encoding in HTML attributes
-const voiceAudioStore = new Map();
-
 function prune(){
-  const w = document.getElementById('messages-inner');
-  while(w.children.length > 200) w.removeChild(w.children[0]);
-  if(messages.length > 180){
-    const removed = messages.splice(0, messages.length - 180);
-    removed.forEach(m => {
-      if(m.type==='image') lbStore.delete(m.id);
-      if(m.type==='voice') voiceAudioStore.delete(m.id);
+  const w=document.getElementById('messages-inner');
+  while(w.children.length>200)w.removeChild(w.children[0]);
+  if(messages.length>180){
+    const removed=messages.splice(0,messages.length-180);
+    removed.forEach(m=>{
+      if(m.type==='image')lbStore.delete(m.id);
+      if(m.type==='voice'){voiceAudioStore.delete(m.id);voiceAudioMap.delete(m.id);}
     });
   }
-  if(messages.length > 0){
-    const last = messages[messages.length-1];
-    lastUid = last.userId || null; lastType = 'msg'; lastMsgTs = typeof last.ts==='number' ? last.ts : 0;
-  } else { lastUid = null; lastType = null; lastMsgTs = 0; }
+  if(messages.length>0){
+    const last=messages[messages.length-1];
+    lastUid=last.userId||null;lastType='msg';lastMsgTs=typeof last.ts==='number'?last.ts:0;
+  }else{lastUid=null;lastType=null;lastMsgTs=0;}
 }
-function pruneLbStore(){
-  if(lbStore.size >= MAX_STORE){ const k=[...lbStore.keys()]; k.slice(0,50).forEach(x=>lbStore.delete(x)); }
-}
-function pruneReactData(){
-  if(reactData.size >= MAX_STORE){ const k=[...reactData.keys()]; k.slice(0,50).forEach(x=>reactData.delete(x)); }
-}
+function pruneLbStore(){if(lbStore.size>=MAX_STORE){const k=[...lbStore.keys()];k.slice(0,50).forEach(x=>lbStore.delete(x));}}
+function pruneReactData(){if(reactData.size>=MAX_STORE){const k=[...reactData.keys()];k.slice(0,50).forEach(x=>reactData.delete(x));}}
 
 /* ══ REACTIONS ══ */
-function openReactMenu(msgId, btn){
-  if(!msgId) return;
-  if(reactMenu){ reactMenu.remove(); reactMenu = null; }
-  const p = document.createElement('div');
-  p.setAttribute('role','dialog'); p.setAttribute('aria-label','Pick a reaction');
-  p.style.cssText = 'position:fixed;z-index:600;background:var(--bg-card2);border:1px solid rgba(0,255,65,0.2);border-radius:4px;padding:8px;box-shadow:0 8px 30px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(6,1fr);gap:3px;animation:fadeUpIn 0.2s ease;';
-  REACT_EMOJIS.forEach(em => {
-    const b = document.createElement('button'); b.className = 'emoji-btn'; b.textContent = em;
-    b.style.fontSize = '18px'; b.setAttribute('aria-label','React with '+em);
-    b.addEventListener('click', e => {
+function openReactMenu(msgId,btn){
+  if(!msgId)return;
+  if(reactMenu){reactMenu.remove();reactMenu=null;}
+  const p=document.createElement('div');
+  p.setAttribute('role','dialog');p.setAttribute('aria-label','Pick a reaction');
+  p.style.cssText='position:fixed;z-index:600;background:var(--bg-card2);border:1px solid rgba(0,255,65,0.2);border-radius:4px;padding:8px;box-shadow:0 8px 30px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(6,1fr);gap:3px;animation:fadeUpIn 0.2s ease;';
+  REACT_EMOJIS.forEach(em=>{
+    const b=document.createElement('button');b.className='emoji-btn';b.textContent=em;
+    b.style.fontSize='18px';b.setAttribute('aria-label','React with '+em);
+    b.addEventListener('click',e=>{
       e.stopPropagation();
-      const r = b.getBoundingClientRect(); spawnFloat(em, r.left+r.width/2, r.top);
-      sendReact(msgId, em); p.remove(); reactMenu = null;
+      const r=b.getBoundingClientRect();spawnFloat(em,r.left+r.width/2,r.top);
+      sendReact(msgId,em);p.remove();reactMenu=null;
     });
     p.appendChild(b);
   });
-  document.body.appendChild(p); reactMenu = p;
-  const rect = btn.getBoundingClientRect(); const pw=224, ph=96;
-  const left = Math.max(4, Math.min(rect.left, innerWidth-pw-4));
-  const top  = rect.bottom+4+ph > innerHeight ? rect.top-ph-4 : rect.bottom+4;
-  p.style.left = Math.max(4,left)+'px'; p.style.top = Math.max(4,top)+'px';
+  document.body.appendChild(p);reactMenu=p;
+  const rect=btn.getBoundingClientRect();const pw=224,ph=96;
+  const left=Math.max(4,Math.min(rect.left,innerWidth-pw-4));
+  const top=rect.bottom+4+ph>innerHeight?rect.top-ph-4:rect.bottom+4;
+  p.style.left=Math.max(4,left)+'px';p.style.top=Math.max(4,top)+'px';
   p.querySelector('button')?.focus();
-  setTimeout(() => {
-    const cl = e => { if(reactMenu && !reactMenu.contains(e.target)){ reactMenu.remove(); reactMenu=null; document.removeEventListener('click',cl); document.removeEventListener('keydown',ck); } };
-    const ck = e => { if(e.key==='Escape' && reactMenu){ reactMenu.remove(); reactMenu=null; document.removeEventListener('click',cl); document.removeEventListener('keydown',ck); } };
-    document.addEventListener('click', cl); document.addEventListener('keydown', ck);
-  }, 50);
+  setTimeout(()=>{
+    const cl=e=>{if(reactMenu&&!reactMenu.contains(e.target)){reactMenu.remove();reactMenu=null;document.removeEventListener('click',cl);document.removeEventListener('keydown',ck);}};
+    const ck=e=>{if(e.key==='Escape'&&reactMenu){reactMenu.remove();reactMenu=null;document.removeEventListener('click',cl);document.removeEventListener('keydown',ck);}};
+    document.addEventListener('click',cl);document.addEventListener('keydown',ck);
+  },50);
 }
-function sendReact(msgId, emoji){
-  if(!me || !REACT_EMOJIS.includes(emoji) || !msgId) return;
-  onReaction(msgId, emoji, me.id);
-  bcast('reaction', {msgId, emoji, userId:me.id});
+function sendReact(msgId,emoji){
+  if(!me||!REACT_EMOJIS.includes(emoji)||!msgId)return;
+  onReaction(msgId,emoji,me.id);
+  bcast('reaction',{msgId,emoji,userId:me.id});
 }
-function onReaction(msgId, emoji, userId){
-  if(!msgId || !emoji || !userId || !REACT_EMOJIS.includes(emoji)) return;
+function onReaction(msgId,emoji,userId){
+  if(!msgId||!emoji||!userId||!REACT_EMOJIS.includes(emoji))return;
   pruneReactData();
-  if(!reactData.has(msgId)) reactData.set(msgId, new Map());
-  const em = reactData.get(msgId);
-  if(!em.has(emoji)) em.set(emoji, new Set());
-  const s = em.get(emoji); s.has(userId) ? s.delete(userId) : s.add(userId);
-  if(!s.size) em.delete(emoji);
+  if(!reactData.has(msgId))reactData.set(msgId,new Map());
+  const em=reactData.get(msgId);
+  if(!em.has(emoji))em.set(emoji,new Set());
+  const s=em.get(emoji);s.has(userId)?s.delete(userId):s.add(userId);
+  if(!s.size)em.delete(emoji);
   renderReacts(msgId);
 }
 function renderReacts(msgId){
-  const row = document.getElementById('r-' + CSS.escape(msgId)); if(!row) return;
-  row.innerHTML = '';
-  const em = reactData.get(msgId); if(!em?.size) return;
-  em.forEach((set, emoji) => {
-    if(!set.size) return;
-    const chip = document.createElement('div'); chip.className = 'reaction-chip' + (set.has(me?.id)?' mine':'');
-    chip.textContent = `${emoji} ${set.size}`; chip.setAttribute('role','button'); chip.setAttribute('tabindex','0');
-    const names = [...set].map(id => users.get(id)?.name||'operative').slice(0,5);
-    chip.title = names.join(', ') + (set.size>5?` +${set.size-5} more`:'');
-    chip.setAttribute('aria-label', `${emoji} from ${chip.title}`);
-    const doit = () => { const r=chip.getBoundingClientRect(); spawnFloat(emoji,r.left+r.width/2,r.top); sendReact(msgId,emoji); };
-    chip.addEventListener('click', doit);
-    chip.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); doit(); } });
+  const row=document.getElementById('r-'+CSS.escape(msgId));if(!row)return;
+  row.innerHTML='';
+  const em=reactData.get(msgId);if(!em?.size)return;
+  em.forEach((set,emoji)=>{
+    if(!set.size)return;
+    const chip=document.createElement('div');chip.className='reaction-chip'+(set.has(me?.id)?' mine':'');
+    chip.textContent=`${emoji} ${set.size}`;chip.setAttribute('role','button');chip.setAttribute('tabindex','0');
+    const names=[...set].map(id=>users.get(id)?.name||'operative').slice(0,5);
+    chip.title=names.join(', ')+(set.size>5?` +${set.size-5} more`:'');
+    chip.setAttribute('aria-label',`${emoji} from ${chip.title}`);
+    const doit=()=>{const r=chip.getBoundingClientRect();spawnFloat(emoji,r.left+r.width/2,r.top);sendReact(msgId,emoji);};
+    chip.addEventListener('click',doit);
+    chip.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();doit();}});
     row.appendChild(chip);
   });
 }
-function spawnFloat(emoji, x, y){
-  const el = document.createElement('div'); el.className = 'float-emoji';
-  el.textContent = emoji; el.style.left = x+'px'; el.style.top = y+'px';
-  el.setAttribute('aria-hidden','true'); document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1300);
+function spawnFloat(emoji,x,y){
+  const el=document.createElement('div');el.className='float-emoji';
+  el.textContent=emoji;el.style.left=x+'px';el.style.top=y+'px';
+  el.setAttribute('aria-hidden','true');document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1300);
 }
 
 /* ══ TYPING ══ */
-let typT = null, isTyping = false;
+let typT=null,isTyping=false;
 function sendTyping(){
-  if(document.hidden || !me) return;
-  if(!isTyping){ isTyping = true; bcast('typing', {userId:me.id, name:me.name}); }
+  if(document.hidden||!me)return;
+  if(!isTyping){isTyping=true;bcast('typing',{userId:me.id,name:me.name});}
   clearTimeout(typT);
-  typT = setTimeout(() => { isTyping = false; if(me) bcast('stop_typing', {userId:me.id}); }, 1500);
+  typT=setTimeout(()=>{isTyping=false;if(me)bcast('stop_typing',{userId:me.id});},1500);
 }
 function onTyping(userId){
-  if(!userId || userId===me?.id) return;
+  if(!userId||userId===me?.id)return;
   clearTimeout(typingUsers.get(userId));
-  typingUsers.set(userId, setTimeout(() => { typingUsers.delete(userId); renderTyp(); }, 2500));
+  typingUsers.set(userId,setTimeout(()=>{typingUsers.delete(userId);renderTyp();},2500));
   renderTyp();
 }
-function stopTyping(userId){
-  if(!userId) return; clearTimeout(typingUsers.get(userId)); typingUsers.delete(userId); renderTyp();
-}
+function stopTyping(userId){if(!userId)return;clearTimeout(typingUsers.get(userId));typingUsers.delete(userId);renderTyp();}
 function renderTyp(){
-  const el = document.getElementById('typing-indicator');
-  if(!typingUsers.size){ el.innerHTML=''; return; }
-  const names = [...typingUsers.keys()].map(id => users.get(id)?.name||'OPERATIVE');
-  el.innerHTML = `${names.map(esc).join(' & ')} TRANSMITTING<span class="typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>`;
+  const el=document.getElementById('typing-indicator');
+  if(!typingUsers.size){el.innerHTML='';return;}
+  const names=[...typingUsers.keys()].map(id=>users.get(id)?.name||'OPERATIVE');
+  el.innerHTML=`${names.map(esc).join(' & ')} TRANSMITTING<span class="typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>`;
 }
 
 /* ══ SCROLL ══ */
-let userScrolled = false;
-function scroll(){ const w=document.getElementById('messages-wrap'); if(!userScrolled) w.scrollTop = w.scrollHeight; }
-document.getElementById('messages-wrap').addEventListener('scroll', function(){
-  userScrolled = this.scrollHeight - this.scrollTop - this.clientHeight > 100;
-  if(!userScrolled) document.getElementById('new-msg-btn').style.display = 'none';
+let userScrolled=false;
+function scroll(){const w=document.getElementById('messages-wrap');if(!userScrolled)w.scrollTop=w.scrollHeight;}
+document.getElementById('messages-wrap').addEventListener('scroll',function(){
+  userScrolled=this.scrollHeight-this.scrollTop-this.clientHeight>100;
+  if(!userScrolled)document.getElementById('new-msg-btn').style.display='none';
 });
-document.getElementById('new-msg-btn').addEventListener('click', () => {
-  userScrolled = false;
-  document.getElementById('messages-wrap').scrollTop = 99999;
-  document.getElementById('new-msg-btn').style.display = 'none';
+document.getElementById('new-msg-btn').addEventListener('click',()=>{
+  userScrolled=false;
+  document.getElementById('messages-wrap').scrollTop=99999;
+  document.getElementById('new-msg-btn').style.display='none';
 });
-window.addEventListener('orientationchange', () => setTimeout(() => { if(!userScrolled) scroll(); }, 300));
-window.addEventListener('resize', () => { if(!userScrolled) setTimeout(scroll, 100); });
+window.addEventListener('orientationchange',()=>setTimeout(()=>{if(!userScrolled)scroll();},300));
+window.addEventListener('resize',()=>{if(!userScrolled)setTimeout(scroll,100);});
 
 /* ══ SEND TEXT ══ */
 function sendMsg(){
-  const input = document.getElementById('msg-input'); const text = input.value.trim();
-  if(!text || !me) return;
-  if(text.length > MAX_MSG_LEN){ toast('MESSAGE TOO LONG — MAX 500 CHARS'); return; }
-  if(!checkRate()) return;
-  const msg = {id:genId(), userId:me.id, name:me.name, color:me.color, text, ts:Date.now()};
-  addMsg(msg); bcast('message', {msg}); input.value=''; updateCC(); input.style.height='auto';
-  const btn = document.getElementById('btn-send'); btn.classList.add('sent-anim'); setTimeout(() => btn.classList.remove('sent-anim'), 400);
-  alienFx(); clearTimeout(typT); isTyping = false; bcast('stop_typing', {userId:me.id});
+  const input=document.getElementById('msg-input');const text=input.value.trim();
+  if(!text||!me)return;
+  if(text.length>MAX_MSG_LEN){toast('MESSAGE TOO LONG — MAX 500 CHARS');return;}
+  if(!checkRate())return;
+  const msg={id:genId(),userId:me.id,name:me.name,color:me.color,text,ts:Date.now()};
+  addMsg(msg);bcast('message',{msg});input.value='';updateCC();input.style.height='auto';
+  const btn=document.getElementById('btn-send');btn.classList.add('sent-anim');setTimeout(()=>btn.classList.remove('sent-anim'),400);
+  alienFx();clearTimeout(typT);isTyping=false;bcast('stop_typing',{userId:me.id});
 }
 function alienFx(){
   document.querySelector('.alien-flash')?.remove();
-  const el = document.createElement('div'); el.className = 'alien-flash';
-  el.textContent = ALIEN_FX[Math.floor(Math.random() * ALIEN_FX.length)];
-  el.setAttribute('aria-hidden','true'); document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2100);
+  const el=document.createElement('div');el.className='alien-flash';
+  el.textContent=ALIEN_FX[Math.floor(Math.random()*ALIEN_FX.length)];
+  el.setAttribute('aria-hidden','true');document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2100);
 }
 
 /* ══ INPUT EVENTS ══ */
-const mi = document.getElementById('msg-input'), iw = document.getElementById('input-wrap');
-mi.addEventListener('focus',  () => iw.classList.add('focused'));
-mi.addEventListener('blur',   () => iw.classList.remove('focused'));
-mi.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); } if(e.key==='Escape') closeMP(); });
-mi.addEventListener('input',   () => { updateCC(); autoRsz(); sendTyping(); });
-mi.addEventListener('paste', e => {
-  const items = e.clipboardData?.items;
-  if(items){ for(const it of items){ if(it.type.startsWith('image/')){ e.preventDefault(); loadImgFile(it.getAsFile()); return; } } }
+const mi=document.getElementById('msg-input'),iw=document.getElementById('input-wrap');
+mi.addEventListener('focus',()=>iw.classList.add('focused'));
+mi.addEventListener('blur', ()=>iw.classList.remove('focused'));
+mi.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}if(e.key==='Escape')closeMP();});
+mi.addEventListener('input',()=>{updateCC();autoRsz();sendTyping();});
+mi.addEventListener('paste',e=>{
+  const items=e.clipboardData?.items;
+  if(items){for(const it of items){if(it.type.startsWith('image/')){e.preventDefault();loadImgFile(it.getAsFile());return;}}}
   e.preventDefault();
-  const txt = (e.clipboardData || window.clipboardData).getData('text/plain');
-  if(!txt) return;
-  const sel = mi.selectionStart;
-  const nv = (mi.value.slice(0,sel) + txt + mi.value.slice(mi.selectionEnd)).slice(0, MAX_MSG_LEN);
-  mi.value = nv; mi.selectionStart = mi.selectionEnd = Math.min(sel+txt.length, MAX_MSG_LEN);
-  updateCC(); autoRsz();
-}, true);
-function updateCC(){ const r=MAX_MSG_LEN-mi.value.length; const el=document.getElementById('char-count'); el.textContent=r; el.classList.toggle('warn',r<50); }
-function autoRsz(){ mi.style.height='auto'; mi.style.height=Math.min(mi.scrollHeight,120)+'px'; }
-document.getElementById('btn-send').addEventListener('click', sendMsg);
+  const txt=(e.clipboardData||window.clipboardData).getData('text/plain');
+  if(!txt)return;
+  const sel=mi.selectionStart;
+  const nv=(mi.value.slice(0,sel)+txt+mi.value.slice(mi.selectionEnd)).slice(0,MAX_MSG_LEN);
+  mi.value=nv;mi.selectionStart=mi.selectionEnd=Math.min(sel+txt.length,MAX_MSG_LEN);
+  updateCC();autoRsz();
+},true);
+function updateCC(){const r=MAX_MSG_LEN-mi.value.length;const el=document.getElementById('char-count');el.textContent=r;el.classList.toggle('warn',r<50);}
+function autoRsz(){mi.style.height='auto';mi.style.height=Math.min(mi.scrollHeight,120)+'px';}
+document.getElementById('btn-send').addEventListener('click',sendMsg);
 
 /* ══ MEDIA PICKER ══ */
-const mp = document.getElementById('media-picker');
-const eg = document.createElement('div'); eg.className = 'emoji-grid';
-EMOJIS.forEach(em => {
-  const b = document.createElement('button'); b.className = 'emoji-btn'; b.textContent = em; b.setAttribute('aria-label', em);
-  b.addEventListener('click', () => {
-    const sel = mi.selectionStart;
-    const nv = (mi.value.slice(0,sel) + em + mi.value.slice(mi.selectionEnd)).slice(0, MAX_MSG_LEN);
-    mi.value = nv; mi.selectionStart = mi.selectionEnd = Math.min(sel+[...em].length, MAX_MSG_LEN);
-    mi.focus(); updateCC();
+const mp=document.getElementById('media-picker');
+const eg=document.createElement('div');eg.className='emoji-grid';
+EMOJIS.forEach(em=>{
+  const b=document.createElement('button');b.className='emoji-btn';b.textContent=em;b.setAttribute('aria-label',em);
+  b.addEventListener('click',()=>{
+    const sel=mi.selectionStart;
+    const nv=(mi.value.slice(0,sel)+em+mi.value.slice(mi.selectionEnd)).slice(0,MAX_MSG_LEN);
+    mi.value=nv;mi.selectionStart=mi.selectionEnd=Math.min(sel+[...em].length,MAX_MSG_LEN);
+    mi.focus();updateCC();
   });
   eg.appendChild(b);
 });
 document.getElementById('panel-emoji').appendChild(eg);
 
-const sg = document.createElement('div'); sg.className = 'sticker-grid';
-STICKERS.forEach(st => {
-  const b = document.createElement('button'); b.className = 'sticker-btn'; b.textContent = st; b.setAttribute('aria-label','Send sticker '+st);
-  b.addEventListener('click', () => {
-    if(!me || !checkRate()) return;
-    const msg = {id:genId(), userId:me.id, name:me.name, color:me.color, emoji:st, type:'sticker', ts:Date.now()};
-    addMsg(msg); bcast('message', {msg}); alienFx(); closeMP();
+const sg=document.createElement('div');sg.className='sticker-grid';
+STICKERS.forEach(st=>{
+  const b=document.createElement('button');b.className='sticker-btn';b.textContent=st;b.setAttribute('aria-label','Send sticker '+st);
+  b.addEventListener('click',()=>{
+    if(!me||!checkRate())return;
+    const msg={id:genId(),userId:me.id,name:me.name,color:me.color,emoji:st,type:'sticker',ts:Date.now()};
+    addMsg(msg);bcast('message',{msg});alienFx();closeMP();
   });
   sg.appendChild(b);
 });
 document.getElementById('panel-sticker').appendChild(sg);
 
-document.querySelectorAll('.picker-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.picker-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
-    document.querySelectorAll('.picker-panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active'); tab.setAttribute('aria-selected','true');
-    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+document.querySelectorAll('.picker-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.picker-tab').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false');});
+    document.querySelectorAll('.picker-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');tab.setAttribute('aria-selected','true');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
   });
 });
-const emojiBtn = document.getElementById('btn-emoji-open');
-emojiBtn.addEventListener('click', e => {
-  e.stopPropagation(); const isOpen = mp.classList.toggle('open');
-  emojiBtn.setAttribute('aria-expanded', String(isOpen));
+const emojiBtn=document.getElementById('btn-emoji-open');
+emojiBtn.addEventListener('click',e=>{
+  e.stopPropagation();const isOpen=mp.classList.toggle('open');
+  emojiBtn.setAttribute('aria-expanded',String(isOpen));
 });
-function closeMP(){ mp.classList.remove('open'); emojiBtn.setAttribute('aria-expanded','false'); }
-document.addEventListener('click', e => { if(!mp.contains(e.target) && e.target.id!=='btn-emoji-open') closeMP(); });
-document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeMP(); if(reactMenu){ reactMenu.remove(); reactMenu=null; } closeLb(); } });
+function closeMP(){mp.classList.remove('open');emojiBtn.setAttribute('aria-expanded','false');}
+document.addEventListener('click',e=>{if(!mp.contains(e.target)&&e.target.id!=='btn-emoji-open')closeMP();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMP();if(reactMenu){reactMenu.remove();reactMenu=null;}closeLb();}});
 
 /* ══ IMAGE ══ */
-document.getElementById('btn-attach').addEventListener('click', () => document.getElementById('img-file-input').click());
-document.getElementById('img-file-input').addEventListener('change', e => { if(e.target.files[0]) loadImgFile(e.target.files[0]); e.target.value=''; });
-let dc = 0;
-document.addEventListener('dragenter', e => { if(!me) return; if([...(e.dataTransfer?.types||[])].includes('Files')){ dc++; document.getElementById('drag-overlay').classList.add('active'); } });
-document.addEventListener('dragleave', e => { if(!e.relatedTarget||!document.documentElement.contains(e.relatedTarget)){ dc=0; document.getElementById('drag-overlay').classList.remove('active'); } else if(--dc<=0){ dc=0; document.getElementById('drag-overlay').classList.remove('active'); } });
-document.addEventListener('dragover', e => e.preventDefault());
-document.addEventListener('drop', e => {
-  e.preventDefault(); dc=0; document.getElementById('drag-overlay').classList.remove('active');
-  if(!me) return;
-  const f = e.dataTransfer?.files[0];
-  if(f?.type.startsWith('image/')) loadImgFile(f); else if(f) toast('IMAGES ONLY — PNG · JPG · GIF · WEBP');
+document.getElementById('btn-attach').addEventListener('click',()=>document.getElementById('img-file-input').click());
+document.getElementById('img-file-input').addEventListener('change',e=>{if(e.target.files[0])loadImgFile(e.target.files[0]);e.target.value='';});
+let dc=0;
+document.addEventListener('dragenter',e=>{if(!me)return;if([...(e.dataTransfer?.types||[])].includes('Files')){dc++;document.getElementById('drag-overlay').classList.add('active');}});
+document.addEventListener('dragleave',e=>{if(!e.relatedTarget||!document.documentElement.contains(e.relatedTarget)){dc=0;document.getElementById('drag-overlay').classList.remove('active');}else if(--dc<=0){dc=0;document.getElementById('drag-overlay').classList.remove('active');}});
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{
+  e.preventDefault();dc=0;document.getElementById('drag-overlay').classList.remove('active');
+  if(!me)return;const f=e.dataTransfer?.files[0];
+  if(f?.type.startsWith('image/'))loadImgFile(f);else if(f)toast('IMAGES ONLY — PNG · JPG · GIF · WEBP');
 });
 function loadImgFile(file){
-  if(!file) return;
-  const allowed = ['image/png','image/jpeg','image/gif','image/webp'];
-  if(!allowed.includes(file.type)){ toast('UNSUPPORTED FORMAT'); return; }
-  if(file.size===0){ toast('EMPTY FILE'); return; }
-  if(file.size > MAX_IMG_BYTES){ toast(`IMAGE TOO LARGE — MAX ${fsz(MAX_IMG_BYTES)}`); return; }
-  const r = new FileReader(); r.onerror = () => toast('READ FAILED');
-  r.onload = ev => {
-    const src = String(ev.target?.result||'');
-    if(!IMG_DATA_RE.test(src)){ toast('INVALID IMAGE DATA'); return; }
-    pendingImg = {dataUrl:src, name:String(file.name).replace(/[<>"\\`]/g,'').slice(0,60), size:file.size};
+  if(!file)return;
+  const allowed=['image/png','image/jpeg','image/gif','image/webp'];
+  if(!allowed.includes(file.type)){toast('UNSUPPORTED FORMAT');return;}
+  if(file.size===0){toast('EMPTY FILE');return;}
+  if(file.size>MAX_IMG_BYTES){toast(`IMAGE TOO LARGE — MAX ${fsz(MAX_IMG_BYTES)}`);return;}
+  const r=new FileReader();r.onerror=()=>toast('READ FAILED');
+  r.onload=ev=>{
+    const src=String(ev.target?.result||'');
+    if(!IMG_DATA_RE.test(src)){toast('INVALID IMAGE DATA');return;}
+    pendingImg={dataUrl:src,name:String(file.name).replace(/[<>"\\`]/g,'').slice(0,60),size:file.size};
     showIP();
   };
   r.readAsDataURL(file);
 }
 function showIP(){
-  if(!pendingImg) return;
-  document.getElementById('img-preview-thumb').src = pendingImg.dataUrl;
-  document.getElementById('img-preview-name').textContent = pendingImg.name;
-  document.getElementById('img-preview-size').textContent = fsz(pendingImg.size);
-  document.getElementById('img-caption').value = '';
+  if(!pendingImg)return;
+  document.getElementById('img-preview-thumb').src=pendingImg.dataUrl;
+  document.getElementById('img-preview-name').textContent=pendingImg.name;
+  document.getElementById('img-preview-size').textContent=fsz(pendingImg.size);
+  document.getElementById('img-caption').value='';
   document.getElementById('img-preview-bar').classList.add('show');
   document.getElementById('img-caption').focus();
 }
 function clearIP(){
-  pendingImg = null;
+  pendingImg=null;
   document.getElementById('img-preview-bar').classList.remove('show');
-  document.getElementById('img-preview-thumb').src = '';
-  document.getElementById('img-caption').value = '';
+  document.getElementById('img-preview-thumb').src='';
+  document.getElementById('img-caption').value='';
 }
-document.getElementById('btn-img-cancel').addEventListener('click', clearIP);
-document.getElementById('img-caption').addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendImg(); } if(e.key==='Escape') clearIP(); });
-document.getElementById('btn-img-send').addEventListener('click', sendImg);
+document.getElementById('btn-img-cancel').addEventListener('click',clearIP);
+document.getElementById('img-caption').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendImg();}if(e.key==='Escape')clearIP();});
+document.getElementById('btn-img-send').addEventListener('click',sendImg);
 function sendImg(){
-  if(!pendingImg || !me) return;
-  if(!IMG_DATA_RE.test(pendingImg.dataUrl)){ toast('INVALID IMAGE'); clearIP(); return; }
-  if(!checkRate()) return;
-  const cap = String(document.getElementById('img-caption').value).trim().slice(0,200);
-  const msg = {id:genId(), userId:me.id, name:me.name, color:me.color, text:cap, imgData:pendingImg.dataUrl, imgName:pendingImg.name, ts:Date.now(), type:'image'};
-  addMsg(msg); try{ bcast('message', {msg}); }catch(e){ toast('IMAGE BROADCAST ERROR'); console.error(e); }
-  clearIP(); alienFx();
+  if(!pendingImg||!me)return;
+  if(!IMG_DATA_RE.test(pendingImg.dataUrl)){toast('INVALID IMAGE');clearIP();return;}
+  if(!checkRate())return;
+  const cap=String(document.getElementById('img-caption').value).trim().slice(0,200);
+  const msg={id:genId(),userId:me.id,name:me.name,color:me.color,text:cap,imgData:pendingImg.dataUrl,imgName:pendingImg.name,ts:Date.now(),type:'image'};
+  addMsg(msg);try{bcast('message',{msg});}catch(e){toast('IMAGE BROADCAST ERROR');console.error(e);}
+  clearIP();alienFx();
 }
 
 /* ══ LIGHTBOX ══ */
 function openLb(data){
-  if(!data?.src || !IMG_DATA_RE.test(data.src)) return;
-  document.getElementById('lb-img').src = data.src; document.getElementById('lb-img').alt = String(data.name||'Image');
-  document.getElementById('lb-sender').innerHTML = `<span style="color:${safeColor(data.color)}">${esc(String(data.sender||'OPERATIVE').slice(0,20))}</span>`;
-  document.getElementById('lb-caption').textContent = String(data.caption||'').slice(0,200);
-  document.getElementById('lb-time').textContent = ftime(data.ts);
-  const dl = document.getElementById('lb-dl'); dl.href = data.src;
-  const rawExt = String(data.name||'jpg').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,5);
-  dl.download = 'galaxy_' + Date.now() + '.' + (['png','jpg','jpeg','gif','webp'].includes(rawExt)?rawExt:'jpg');
-  document.getElementById('lightbox').classList.add('open'); document.getElementById('lb-close').focus();
+  if(!data?.src||!IMG_DATA_RE.test(data.src))return;
+  document.getElementById('lb-img').src=data.src;
+  document.getElementById('lb-sender').innerHTML=`<span style="color:${safeColor(data.color)}">${esc(String(data.sender||'OPERATIVE').slice(0,20))}</span>`;
+  document.getElementById('lb-caption').textContent=String(data.caption||'').slice(0,200);
+  document.getElementById('lb-time').textContent=ftime(data.ts);
+  const dl=document.getElementById('lb-dl');dl.href=data.src;
+  const rawExt=String(data.name||'jpg').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,5);
+  dl.download='galaxy_'+Date.now()+'.'+(['png','jpg','jpeg','gif','webp'].includes(rawExt)?rawExt:'jpg');
+  document.getElementById('lightbox').classList.add('open');document.getElementById('lb-close').focus();
 }
-function closeLb(){ document.getElementById('lightbox').classList.remove('open'); }
-document.getElementById('lightbox').addEventListener('click', e => { if(e.target===document.getElementById('lightbox')) closeLb(); });
-document.getElementById('lb-close').addEventListener('click', closeLb);
+function closeLb(){document.getElementById('lightbox').classList.remove('open');}
+document.getElementById('lightbox').addEventListener('click',e=>{if(e.target===document.getElementById('lightbox'))closeLb();});
+document.getElementById('lb-close').addEventListener('click',closeLb);
 
 /* ══ PROFANITY TOGGLE ══ */
-document.getElementById('profanity-toggle').addEventListener('click', function(){
-  profanityOn = !profanityOn; this.classList.toggle('on', profanityOn); this.setAttribute('aria-checked', String(profanityOn));
+document.getElementById('profanity-toggle').addEventListener('click',function(){
+  profanityOn=!profanityOn;this.classList.toggle('on',profanityOn);this.setAttribute('aria-checked',String(profanityOn));
 });
-document.getElementById('profanity-toggle').addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); document.getElementById('profanity-toggle').click(); } });
+document.getElementById('profanity-toggle').addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();document.getElementById('profanity-toggle').click();}});
 
 /* ══ LEAVE ══ */
 async function leave(){
-  if(!me) return; isLeavingIntentionally = true; endCall();
-  if(ch){ try{ await ch.untrack(); }catch(e){} try{ sb.removeChannel(ch); }catch(e){} ch = null; }
-  setTimeout(() => location.reload(), 200);
+  if(!me)return;isLeavingIntentionally=true;endCall();
+  if(ch){try{await ch.untrack();}catch(e){}try{sb.removeChannel(ch);}catch(e){}ch=null;}
+  setTimeout(()=>location.reload(),200);
 }
-document.getElementById('btn-leave').addEventListener('click', leave);
-window.addEventListener('beforeunload', () => {
-  isLeavingIntentionally = true; endCall();
-  if(ch){ try{ ch.untrack(); }catch(e){} try{ sb.removeChannel(ch); }catch(e){} }
+document.getElementById('btn-leave').addEventListener('click',leave);
+window.addEventListener('beforeunload',()=>{
+  isLeavingIntentionally=true;endCall();
+  if(ch){try{ch.untrack();}catch(e){}try{sb.removeChannel(ch);}catch(e){}}
 });
 
 /* ══ MOBILE SIDEBAR ══ */
-const closeSB = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); document.getElementById('btn-menu').setAttribute('aria-expanded','false'); };
-document.getElementById('btn-menu').addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('show'); document.getElementById('btn-menu').setAttribute('aria-expanded','true'); });
-document.getElementById('sidebar-overlay').addEventListener('click', closeSB);
-document.addEventListener('keydown', e => { if(e.key==='Escape' && document.getElementById('sidebar').classList.contains('open')) closeSB(); });
-document.addEventListener('visibilitychange', () => { if(document.hidden && me){ clearTimeout(typT); if(isTyping){ isTyping=false; bcast('stop_typing',{userId:me.id}); } } });
+const closeSB=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('show');document.getElementById('btn-menu').setAttribute('aria-expanded','false');};
+document.getElementById('btn-menu').addEventListener('click',()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('sidebar-overlay').classList.add('show');document.getElementById('btn-menu').setAttribute('aria-expanded','true');});
+document.getElementById('sidebar-overlay').addEventListener('click',closeSB);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('sidebar').classList.contains('open'))closeSB();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&me){clearTimeout(typT);if(isTyping){isTyping=false;bcast('stop_typing',{userId:me.id});}}});
 
-/* ══════════════════════════════════════
-   VOICE MESSAGES — COMPLETE REWRITE
-   Key fixes:
-   1. capturedMimeType: saved before recorder is destroyed
-   2. voiceSendIntent: separate flag, not nested in object
-   3. AUDIO_DATA_RE: relaxed to handle codec params
-   4. MAX_VOICE_BYTES: reduced to 150KB to stay within Supabase limits
-   5. Audio stored in voiceAudioStore Map, not in HTML attributes
-══════════════════════════════════════ */
+/* CONTINUED IN PART 3 */
+</script>
+<script>
+/* ════════════════════════════════════════════════════
+   GALAXY RELAY — PART 3 OF 3
+   Contains:
+   1. Voice recording (COMPLETELY REWRITTEN — fixes "NO AUDIO CAPTURED")
+   2. Voice playback
+   3. WebRTC group calls (voice + video)
+   4. Incoming call handling
+   5. Activity tracking + beforeunload
+   ════════════════════════════════════════════════════ */
 
-// Build recording wave bars
-(() => { const w=document.getElementById('voice-rec-wave'); for(let i=0;i<18;i++){ const s=document.createElement('span'); w.appendChild(s); } })();
+/* ══════════════════════════════════════════════════════
+   VOICE MESSAGES — REWRITTEN FROM SCRATCH
+   
+   KEY FIXES:
+   1. mediaRecorder.start(100) — timeslice ensures ondataavailable
+      fires every 100ms during recording, not just at the end.
+      Without this, Safari/Chrome may give ZERO chunks on stop.
+   
+   2. requestData() called before stop() — forces a final chunk
+      flush so no audio is lost in the last interval.
+   
+   3. capturedMime saved at recorder creation time (not read from
+      stopped recorder which returns empty string).
+   
+   4. Separate recStream variable — stream tracks stopped reliably
+      even if mediaRecorder reference gets cleared early.
+   
+   5. voiceSendIntent flag set BEFORE stop() — onstop callback
+      reads this flag; setting it after would be a race condition.
+   
+   6. Size check on raw blob BEFORE base64 encoding (base64 adds
+      ~33% overhead, so check raw to avoid surprising rejections).
+══════════════════════════════════════════════════════ */
+
+/* Build the animated wave bars in recording indicator */
+(()=>{
+  const w=document.getElementById('voice-rec-wave');
+  for(let i=0;i<18;i++){const s=document.createElement('span');w.appendChild(s);}
+})();
 
 function startVoiceRecording(){
-  if(!navigator.mediaDevices?.getUserMedia){ toast('MICROPHONE NOT SUPPORTED IN THIS BROWSER'); return; }
-  if(isRecording) return;
-  navigator.mediaDevices.getUserMedia({audio:true, video:false}).then(stream => {
-    // FIX: Choose best supported MIME type and save it before recorder starts
-    const mimeType = (['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg','audio/mp4']).find(m => {
-      try{ return MediaRecorder.isTypeSupported(m); }catch(e){ return false; }
-    }) || '';
-    capturedMimeType = mimeType; // Save before recorder is created/destroyed
+  if(!navigator.mediaDevices?.getUserMedia){
+    toast('MICROPHONE NOT SUPPORTED IN THIS BROWSER');return;
+  }
+  if(isRecording){return;}
+
+  navigator.mediaDevices.getUserMedia({audio:true,video:false})
+  .then(stream=>{
+    /* FIX: Save stream ref separately so we can always stop tracks */
+    recStream=stream;
+    audioChunks=[];
+    voiceSendIntent=false;
+
+    /* FIX: Choose best MIME and save it NOW before recorder is created */
+    const mimeOptions=[
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/ogg',
+      'audio/mp4',
+      ''
+    ];
+    capturedMime=mimeOptions.find(m=>{
+      if(!m)return true; /* empty = browser default, always works */
+      try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;}
+    })||'';
 
     try{
-      mediaRecorder = new MediaRecorder(stream, mimeType ? {mimeType} : {});
+      mediaRecorder=new MediaRecorder(stream,capturedMime?{mimeType:capturedMime}:{});
     }catch(e){
-      // Fallback: try without mimeType constraint
-      try{ mediaRecorder = new MediaRecorder(stream); capturedMimeType = ''; }
-      catch(e2){ toast('RECORDING NOT SUPPORTED'); stream.getTracks().forEach(t=>t.stop()); return; }
+      /* Absolute fallback: no options at all */
+      try{
+        mediaRecorder=new MediaRecorder(stream);
+        capturedMime='';
+      }catch(e2){
+        toast('RECORDING NOT SUPPORTED IN THIS BROWSER');
+        stream.getTracks().forEach(t=>t.stop());
+        recStream=null;return;
+      }
     }
 
-    audioChunks = []; isRecording = true; voiceSendIntent = false;
+    isRecording=true;
 
-    mediaRecorder.ondataavailable = e => { if(e.data && e.data.size > 0) audioChunks.push(e.data); };
-
-    mediaRecorder.onstop = () => {
-      // FIX: Always stop all tracks to release mic
-      stream.getTracks().forEach(t => t.stop());
-      // FIX: voiceSendIntent is read here — it was set BEFORE stop() was called
-      const shouldSend = voiceSendIntent;
-      cleanupRecordUI();
-      if(shouldSend) processAndSendVoice();
+    /* FIX: ondataavailable wired BEFORE start() */
+    mediaRecorder.ondataavailable=e=>{
+      if(e.data&&e.data.size>0){
+        audioChunks.push(e.data);
+      }
     };
 
-    mediaRecorder.onerror = err => {
-      console.warn('[GR] mediaRecorder error:', err);
-      stream.getTracks().forEach(t => t.stop());
-      voiceSendIntent = false; cleanupRecordUI();
+    mediaRecorder.onstop=()=>{
+      /* FIX: Stop ALL stream tracks here — guaranteed cleanup */
+      if(recStream){recStream.getTracks().forEach(t=>t.stop());recStream=null;}
+
+      const shouldSend=voiceSendIntent; /* read flag set before stop() was called */
+      const chunks=[...audioChunks];   /* snapshot before cleanupRecordUI clears it */
+      cleanupRecordUI();
+
+      if(shouldSend&&chunks.length>0){
+        processAndSendVoice(chunks);
+      }else if(shouldSend&&chunks.length===0){
+        toast('NO AUDIO CAPTURED — TRY AGAIN');
+      }
+    };
+
+    mediaRecorder.onerror=err=>{
+      console.warn('[GR] MediaRecorder error:',err);
+      if(recStream){recStream.getTracks().forEach(t=>t.stop());recStream=null;}
+      voiceSendIntent=false;
+      cleanupRecordUI();
       toast('RECORDING ERROR — TRY AGAIN');
     };
 
-    mediaRecorder.start(250); // Collect chunks every 250ms for reliability
-    recStartTime = Date.now();
-    document.getElementById('voice-rec-timer').textContent = '0:00';
+    /* FIX: timeslice=100ms — fires ondataavailable every 100ms */
+    /* Without this, some browsers only fire once at the very end  */
+    /* and if there's a race condition, chunks array stays empty.  */
+    mediaRecorder.start(100);
+
+    recStartTime=Date.now();
+    document.getElementById('voice-rec-timer').textContent='0:00';
     document.getElementById('voice-record-bar').classList.add('show');
     document.getElementById('btn-voice-rec').classList.add('recording');
 
-    recTimerIv = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - recStartTime) / 1000);
-      const m = Math.floor(elapsed/60), s = String(elapsed%60).padStart(2,'0');
-      document.getElementById('voice-rec-timer').textContent = `${m}:${s}`;
-      if(elapsed >= MAX_VOICE_SEC){ toast('MAX RECORDING LENGTH REACHED'); stopVoiceRecording(true); }
-    }, 500);
+    recTimerIv=setInterval(()=>{
+      const elapsed=Math.floor((Date.now()-recStartTime)/1000);
+      const m=Math.floor(elapsed/60),s=String(elapsed%60).padStart(2,'0');
+      document.getElementById('voice-rec-timer').textContent=`${m}:${s}`;
+      if(elapsed>=MAX_VOICE_SEC){
+        toast('MAX RECORDING LENGTH REACHED');
+        stopVoiceRecording(true);
+      }
+    },500);
 
-  }).catch(err => {
-    console.warn('[GR] mic:', err);
-    if(err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError'){
-      toast('MICROPHONE ACCESS DENIED — ALLOW IN BROWSER');
-    } else if(err.name === 'NotFoundError'){
-      toast('NO MICROPHONE DETECTED');
-    } else {
-      toast('MICROPHONE ERROR: ' + err.message.slice(0,40));
+  })
+  .catch(err=>{
+    console.warn('[GR] getUserMedia error:',err);
+    recStream=null;
+    if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError'){
+      toast('MICROPHONE ACCESS DENIED — ALLOW IN BROWSER SETTINGS');
+    }else if(err.name==='NotFoundError'){
+      toast('NO MICROPHONE DETECTED ON THIS DEVICE');
+    }else{
+      toast('MICROPHONE ERROR: '+String(err.message||err).slice(0,50));
     }
   });
 }
 
 function stopVoiceRecording(send=false){
-  if(!isRecording || !mediaRecorder) return;
-  clearInterval(recTimerIv); recTimerIv = null;
-  // FIX: Set intent BEFORE calling stop() — onstop handler reads this
-  voiceSendIntent = send;
-  if(mediaRecorder.state !== 'inactive'){
-    mediaRecorder.stop(); // triggers onstop → processAndSendVoice if intent is true
-  } else {
-    // Already stopped (shouldn't happen, but handle gracefully)
-    const shouldSend = voiceSendIntent;
+  if(!isRecording||!mediaRecorder)return;
+  clearInterval(recTimerIv);recTimerIv=null;
+
+  /* FIX: Set intent BEFORE calling stop() */
+  /* onstop fires asynchronously — if we set the flag after stop(), */
+  /* onstop may have already run and read the old value (false).    */
+  voiceSendIntent=send;
+
+  if(mediaRecorder.state==='recording'||mediaRecorder.state==='paused'){
+    /* FIX: requestData() flushes any buffered audio not yet delivered */
+    /* This is critical — the last chunk between the final 100ms       */
+    /* timeslice and stop() would be lost without this call.           */
+    try{mediaRecorder.requestData();}catch(e){}
+    /* Small delay to let the final ondataavailable fire before stop   */
+    setTimeout(()=>{
+      try{mediaRecorder.stop();}catch(e){
+        /* Already stopped somehow — run cleanup manually */
+        if(recStream){recStream.getTracks().forEach(t=>t.stop());recStream=null;}
+        const shouldSend=voiceSendIntent;
+        const chunks=[...audioChunks];
+        cleanupRecordUI();
+        if(shouldSend&&chunks.length>0)processAndSendVoice(chunks);
+        else if(shouldSend)toast('NO AUDIO CAPTURED — TRY AGAIN');
+      }
+    },80);
+  }else{
+    /* Already inactive — run onstop logic directly */
+    if(recStream){recStream.getTracks().forEach(t=>t.stop());recStream=null;}
+    const shouldSend=voiceSendIntent;
+    const chunks=[...audioChunks];
     cleanupRecordUI();
-    if(shouldSend) processAndSendVoice();
+    if(shouldSend&&chunks.length>0)processAndSendVoice(chunks);
+    else if(shouldSend)toast('NO AUDIO CAPTURED — TRY AGAIN');
   }
 }
 
 function cancelVoiceRecording(){
-  if(!isRecording) return;
-  voiceSendIntent = false; // discard
-  clearInterval(recTimerIv); recTimerIv = null;
-  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
-    mediaRecorder.stop(); // onstop will see voiceSendIntent=false and skip sending
-  } else {
+  if(!isRecording)return;
+  voiceSendIntent=false; /* discard */
+  clearInterval(recTimerIv);recTimerIv=null;
+
+  if(mediaRecorder&&(mediaRecorder.state==='recording'||mediaRecorder.state==='paused')){
+    try{mediaRecorder.stop();}catch(e){}
+  }else{
+    if(recStream){recStream.getTracks().forEach(t=>t.stop());recStream=null;}
     cleanupRecordUI();
   }
 }
 
 function cleanupRecordUI(){
-  isRecording = false; audioChunks = []; mediaRecorder = null;
+  isRecording=false;
+  audioChunks=[];
+  mediaRecorder=null;
   document.getElementById('voice-record-bar').classList.remove('show');
   document.getElementById('btn-voice-rec').classList.remove('recording');
 }
 
-function processAndSendVoice(){
-  if(audioChunks.length === 0){ toast('NO AUDIO CAPTURED — TRY AGAIN'); return; }
+function processAndSendVoice(chunks){
+  if(!chunks||chunks.length===0){toast('NO AUDIO CAPTURED — TRY AGAIN');return;}
 
-  // FIX: Use saved capturedMimeType (not mediaRecorder.mimeType which is null after stop)
-  // Determine blob MIME — use captured type, fallback to detect from chunks
-  let blobMime = capturedMimeType || 'audio/webm';
-  // Strip codec params for Blob creation (Blob only needs the MIME type, not codec)
-  const blobType = blobMime.split(';')[0] || 'audio/webm';
-  const blob = new Blob(audioChunks, {type: blobType});
+  /* FIX: Use capturedMime for blob type, strip codec params for Blob constructor */
+  const blobType=(capturedMime||'audio/webm').split(';')[0]||'audio/webm';
+  const blob=new Blob(chunks,{type:blobType});
 
-  // FIX: Check size BEFORE base64 encoding — base64 adds ~33% overhead
-  if(blob.size > MAX_VOICE_BYTES){
-    toast(`VOICE MSG TOO LARGE (${fsz(blob.size)}) — KEEP UNDER ${Math.floor(MAX_VOICE_SEC/2)}s`);
+  if(blob.size===0){toast('EMPTY RECORDING — SPEAK CLOSER TO MIC');return;}
+
+  /* FIX: Size check on RAW blob before base64 (base64 adds ~33% overhead) */
+  if(blob.size>MAX_VOICE_BYTES){
+    const recSec=Math.floor((Date.now()-recStartTime)/1000);
+    toast(`VOICE MSG TOO LARGE (${fsz(blob.size)}) — MAX ~${MAX_VOICE_SEC}s`);
     return;
   }
-  if(blob.size === 0){ toast('EMPTY RECORDING — TRY AGAIN'); return; }
 
-  const elapsed = Math.floor((Date.now() - recStartTime) / 1000);
-  const m = Math.floor(elapsed/60), s = String(elapsed%60).padStart(2,'0');
-  const dur = `${m}:${s}`;
+  const elapsed=Math.floor((Date.now()-recStartTime)/1000);
+  const m=Math.floor(elapsed/60),s=String(elapsed%60).padStart(2,'0');
+  const dur=`${m}:${s}`;
 
-  const reader = new FileReader();
-  reader.onerror = () => toast('AUDIO ENCODING FAILED');
-  reader.onload = ev => {
-    const src = String(ev.target?.result || '');
-    // FIX: Use relaxed AUDIO_DATA_RE that handles codec params
+  const reader=new FileReader();
+  reader.onerror=()=>toast('AUDIO ENCODING FAILED — TRY AGAIN');
+  reader.onload=ev=>{
+    const src=String(ev.target?.result||'');
+
+    /* FIX: Relaxed check — accepts "data:audio/webm;codecs=opus;base64,..." */
     if(!AUDIO_DATA_RE.test(src)){
-      console.warn('[GR] Audio data URL invalid:', src.slice(0,50));
-      toast('AUDIO FORMAT UNSUPPORTED BY YOUR BROWSER');
+      console.warn('[GR] Unexpected audio data URL format:',src.slice(0,60));
+      toast('AUDIO FORMAT UNSUPPORTED — TRY ANOTHER BROWSER');
       return;
     }
-    if(!me){ toast('NOT CONNECTED'); return; }
-    if(!checkRate()) return;
+    if(!me){toast('NOT CONNECTED — REJOIN');return;}
+    if(!checkRate())return;
 
-    const msg = {id:genId(), userId:me.id, name:me.name, color:me.color, type:'voice', audioData:src, duration:dur, ts:Date.now()};
+    const msg={
+      id:genId(),userId:me.id,name:me.name,color:me.color,
+      type:'voice',audioData:src,duration:dur,ts:Date.now()
+    };
 
-    // FIX: Try sending — catch errors (e.g. payload too large)
     try{
-      addMsg(msg); // Show locally first
-      bcast('message', {msg});
+      addMsg(msg);       /* show locally immediately */
+      bcast('message',{msg});
       alienFx();
     }catch(e){
-      console.error('[GR] voice send error:', e);
-      toast('VOICE MSG SEND FAILED — TOO LARGE?');
+      console.error('[GR] voice send error:',e);
+      toast('VOICE MSG FAILED — RECORDING TOO LARGE');
     }
   };
   reader.readAsDataURL(blob);
 }
 
-/* Voice button: click once to start, click again to stop and send */
-const vrBtn = document.getElementById('btn-voice-rec');
-vrBtn.addEventListener('click', () => {
+/* ══ VOICE BUTTON EVENTS ══ */
+const vrBtn=document.getElementById('btn-voice-rec');
+
+/* Click: toggle record / stop+send */
+vrBtn.addEventListener('click',()=>{
   if(!isRecording){
     startVoiceRecording();
-  } else {
+  }else{
     stopVoiceRecording(true);
   }
 });
-// Also support hold-to-record on touch devices
-let vrHoldTimer = null, vrHoldTriggered = false;
-vrBtn.addEventListener('touchstart', e => {
-  e.preventDefault();
-  if(isRecording){ stopVoiceRecording(true); return; }
-  vrHoldTriggered = false;
-  vrHoldTimer = setTimeout(() => { vrHoldTriggered = true; startVoiceRecording(); }, 400);
-}, {passive:false});
-vrBtn.addEventListener('touchend', e => {
-  e.preventDefault();
-  clearTimeout(vrHoldTimer);
-  // If hold was triggered and we're recording, stop on release
-  if(vrHoldTriggered && isRecording) stopVoiceRecording(true);
-  // If tap (not hold), handled by click event above — but prevent double-fire
-}, {passive:false});
 
-document.getElementById('btn-rec-cancel').addEventListener('click', cancelVoiceRecording);
-document.getElementById('btn-rec-send').addEventListener('click', () => stopVoiceRecording(true));
+/* Cancel / Send buttons in record bar */
+document.getElementById('btn-rec-cancel').addEventListener('click',cancelVoiceRecording);
+document.getElementById('btn-rec-send').addEventListener('click',()=>stopVoiceRecording(true));
 
-/* Voice playback */
-const voiceAudioMap = new Map(); // msgId -> Audio element
-function playVoice(msgId, btn, src){
-  if(!src || !AUDIO_DATA_RE.test(src)){ toast('AUDIO UNAVAILABLE'); return; }
+/* ══ VOICE PLAYBACK ══ */
+function playVoice(msgId,btn,src){
+  if(!src||!AUDIO_DATA_RE.test(src)){toast('AUDIO UNAVAILABLE');return;}
 
-  // If already have an audio element for this message
+  /* If we already have an Audio element for this message */
   if(voiceAudioMap.has(msgId)){
-    const a = voiceAudioMap.get(msgId);
+    const a=voiceAudioMap.get(msgId);
     if(!a.paused){
-      a.pause(); btn.textContent = '▶'; btn.classList.remove('playing');
-      return;
+      a.pause();btn.textContent='▶';btn.classList.remove('playing');
+    }else{
+      a.currentTime=0;
+      a.play().catch(()=>toast('PLAYBACK ERROR'));
+      btn.textContent='⏸';btn.classList.add('playing');
     }
-    a.currentTime = 0;
-    a.play().catch(() => toast('PLAYBACK ERROR'));
-    btn.textContent = '⏸'; btn.classList.add('playing');
     return;
   }
 
-  const audio = new Audio(src);
-  voiceAudioMap.set(msgId, audio);
+  const audio=new Audio(src);
+  voiceAudioMap.set(msgId,audio);
 
-  audio.play().catch(err => {
-    console.warn('[GR] audio playback:', err);
+  audio.play().catch(err=>{
+    console.warn('[GR] audio play:',err);
     voiceAudioMap.delete(msgId);
-    toast('PLAYBACK ERROR — FORMAT UNSUPPORTED?');
+    toast('PLAYBACK FAILED — FORMAT MAY NOT BE SUPPORTED');
   });
-  btn.textContent = '⏸'; btn.classList.add('playing');
+  btn.textContent='⏸';btn.classList.add('playing');
 
-  let progIv = null;
-  audio.addEventListener('loadedmetadata', () => {
-    progIv = setInterval(() => {
-      if(audio.duration > 0){
-        const pct = audio.currentTime / audio.duration;
-        const bars = document.querySelectorAll(`[id^="wfb-${CSS.escape(msgId)}-"]`);
-        const playedCount = Math.floor(pct * bars.length);
-        bars.forEach((b,i) => b.classList.toggle('played', i < playedCount));
+  let progIv=null;
+  audio.addEventListener('loadedmetadata',()=>{
+    progIv=setInterval(()=>{
+      if(audio.duration>0){
+        const pct=audio.currentTime/audio.duration;
+        const bars=document.querySelectorAll(`[id^="wfb-${CSS.escape(msgId)}-"]`);
+        const playedCount=Math.floor(pct*bars.length);
+        bars.forEach((b,i)=>b.classList.toggle('played',i<playedCount));
+        /* Update duration display with current time */
+        const el=document.getElementById('vdur-'+CSS.escape(msgId));
+        if(el){
+          const cur=Math.floor(audio.currentTime);
+          el.textContent=`${Math.floor(cur/60)}:${String(cur%60).padStart(2,'0')}`;
+        }
       }
-    }, 100);
+    },100);
   });
-  audio.addEventListener('ended', () => {
-    btn.textContent = '▶'; btn.classList.remove('playing'); clearInterval(progIv);
-    // Reset waveform
-    const bars = document.querySelectorAll(`[id^="wfb-${CSS.escape(msgId)}-"]`);
-    bars.forEach(b => b.classList.remove('played'));
+
+  audio.addEventListener('ended',()=>{
+    btn.textContent='▶';btn.classList.remove('playing');
+    clearInterval(progIv);
+    /* Reset waveform */
+    document.querySelectorAll(`[id^="wfb-${CSS.escape(msgId)}-"]`).forEach(b=>b.classList.remove('played'));
+    /* Restore original duration */
+    const el=document.getElementById('vdur-'+CSS.escape(msgId));
+    const origMsg=messages.find(m=>m.id===msgId);
+    if(el&&origMsg)el.textContent=origMsg.duration||'0:00';
   });
-  audio.addEventListener('error', () => {
-    btn.textContent = '▶'; btn.classList.remove('playing'); clearInterval(progIv);
+
+  audio.addEventListener('error',()=>{
+    btn.textContent='▶';btn.classList.remove('playing');
+    clearInterval(progIv);
     voiceAudioMap.delete(msgId);
     toast('PLAYBACK ERROR');
   });
 }
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════════
    WEBRTC — GROUP AUDIO/VIDEO CALLS
-   Key fixes:
-   1. Polite/impolite peer model: user with larger ID is "impolite" and always offers
-      This prevents both sides creating offers simultaneously (glare/collision)
-   2. call_join now properly triggers one-directional offers
-   3. Proper async handling in onCallOffer
-   4. Clean error handling throughout
-══════════════════════════════════════ */
+   Uses polite/impolite model to prevent offer collision:
+   - Larger user ID = "impolite" peer = creates offers
+   - Smaller user ID = "polite" peer = waits for offer
+══════════════════════════════════════════════════════ */
 
 function initiateCall(type){
-  if(!me){ toast('JOIN THE RELAY FIRST'); return; }
-  if(callActive){ toast('ALREADY IN A CALL — END IT FIRST'); return; }
-  callType = type;
-  bcast('call_invite', {from:me.id, fromName:me.name, fromColor:me.color, callType:type});
+  if(!me){toast('JOIN THE RELAY FIRST');return;}
+  if(callActive){toast('ALREADY IN A CALL — END IT FIRST');return;}
+  callType=type;
+  bcast('call_invite',{from:me.id,fromName:me.name,fromColor:me.color,callType:type});
   addSys(`<span style="color:${me.color}">${esc(me.name)}</span> STARTED A ${type.toUpperCase()} CALL`);
   joinCall(type);
 }
 
 function onCallInvite(payload){
-  if(callActive) return;
-  const fromName = String(payload.fromName||'OPERATIVE').slice(0,20);
-  const fromColor = safeColor(payload.fromColor);
-  const ctype = payload.callType==='video' ? 'video' : 'voice';
-  const notif = document.getElementById('incoming-call-notif');
-  document.getElementById('ic-avatar').textContent = ini(fromName);
-  document.getElementById('ic-avatar').style.cssText = avst(fromColor);
-  document.getElementById('ic-name').textContent = fromName.toUpperCase();
-  document.getElementById('ic-type').textContent = ctype==='video' ? '📹 VIDEO CALL' : '🎙️ VOICE CALL';
-  notif.dataset.from = payload.from; notif.dataset.type = ctype;
+  if(callActive)return;
+  const fromName=String(payload.fromName||'OPERATIVE').slice(0,20);
+  const fromColor=safeColor(payload.fromColor);
+  const ctype=payload.callType==='video'?'video':'voice';
+  const notif=document.getElementById('incoming-call-notif');
+  document.getElementById('ic-avatar').textContent=ini(fromName);
+  document.getElementById('ic-avatar').style.cssText=avst(fromColor);
+  document.getElementById('ic-name').textContent=fromName.toUpperCase();
+  document.getElementById('ic-type').textContent=ctype==='video'?'📹 VIDEO CALL':'🎙️ VOICE CALL';
+  notif.dataset.from=payload.from;notif.dataset.type=ctype;
   notif.classList.add('show');
-  clearTimeout(notif._dt); notif._dt = setTimeout(() => notif.classList.remove('show'), 25000);
+  clearTimeout(notif._dt);notif._dt=setTimeout(()=>notif.classList.remove('show'),25000);
 }
 
-document.getElementById('btn-ic-accept').addEventListener('click', () => {
-  const notif = document.getElementById('incoming-call-notif');
-  const ctype = notif.dataset.type || 'voice';
-  notif.classList.remove('show'); clearTimeout(notif._dt);
-  if(!callActive) joinCall(ctype);
+document.getElementById('btn-ic-accept').addEventListener('click',()=>{
+  const notif=document.getElementById('incoming-call-notif');
+  const ctype=notif.dataset.type||'voice';
+  notif.classList.remove('show');clearTimeout(notif._dt);
+  if(!callActive)joinCall(ctype);
 });
-document.getElementById('btn-ic-decline').addEventListener('click', () => {
+document.getElementById('btn-ic-decline').addEventListener('click',()=>{
   document.getElementById('incoming-call-notif').classList.remove('show');
 });
 
 async function joinCall(type){
-  if(callActive) return;
-  callType = type; callActive = true; isMuted = false; isCamOff = false;
+  if(callActive)return;
+  callType=type;callActive=true;isMuted=false;isCamOff=false;
   updateCallUI();
 
   try{
-    const constraints = type==='video'
-      ? {audio:true, video:{width:{ideal:640}, height:{ideal:480}}}
-      : {audio:true, video:false};
-    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const constraints=type==='video'
+      ?{audio:true,video:{width:{ideal:640},height:{ideal:480}}}
+      :{audio:true,video:false};
+    localStream=await navigator.mediaDevices.getUserMedia(constraints);
   }catch(err){
-    console.warn('[GR] getUserMedia:', err);
-    localStream = null;
-    toast('MICROPHONE' + (type==='video'?'/CAMERA':'') + ' ACCESS DENIED — JOINING WITHOUT AUDIO');
+    console.warn('[GR] getUserMedia for call:',err);
+    localStream=null;
+    toast('MICROPHONE'+(type==='video'?'/CAMERA':'')+' DENIED — JOINING WITHOUT AUDIO');
   }
 
   showCallOverlay(type);
-  addCallParticipantUI(me.id, me.name, me.color, type); // Add self to UI
+  addCallParticipantUI(me.id,me.name,me.color,type);
   startCallTimer();
 
-  // Announce join to all existing participants
-  bcast('call_join', {from:me.id, fromName:me.name, fromColor:me.color, callType:type});
+  bcast('call_join',{from:me.id,fromName:me.name,fromColor:me.color,callType:type});
   updateCallSidebar();
 }
 
-// FIX: When a new participant joins, use deterministic offer/answer assignment
-// The participant with the LARGER user ID string creates the offer
-// This prevents both sides from creating offers simultaneously (connection glare)
 function onCallJoin(payload){
-  if(!callActive) return;
-  const uid   = String(payload.from).slice(0,40);
-  const name  = String(payload.fromName||'OPERATIVE').slice(0,20);
-  const color = safeColor(payload.fromColor);
+  if(!callActive)return;
+  const uid=String(payload.from).slice(0,40);
+  const name=String(payload.fromName||'OPERATIVE').slice(0,20);
+  const color=safeColor(payload.fromColor);
 
-  addCallParticipantUI(uid, name, color, callType);
+  addCallParticipantUI(uid,name,color,callType);
 
-  // FIX: Only the "impolite" peer (larger ID) creates the offer
-  // The "polite" peer (smaller ID) waits for an offer
-  if(me.id > uid){
-    // I am impolite — I create the offer to the newcomer
-    createOfferFor(uid, name, color);
+  /* Polite/impolite: larger ID creates the offer */
+  if(me.id>uid){
+    createOfferFor(uid,name,color);
   }
-  // else: I am polite — I wait for the newcomer to send me an offer
-  // But the newcomer won't send an offer unless I send them call_join...
-  // FIX: Actually the newcomer already broadcast call_join. Existing members who have SMALLER IDs
-  // than the newcomer should NOT create offers — newcomer will offer them instead.
-  // Newcomer runs joinCall() → bcast call_join → all existing members get it
-  // Members with larger ID than newcomer → createOfferFor(newcomer)
-  // Members with smaller ID than newcomer → wait for newcomer's offer
-  // But newcomer doesn't know who the existing members are!
-  // Solution: newcomer must also send offers to members with smaller IDs
-  // We handle this: when newcomer receives call_join events back (they won't — self:false)
-  // Alternative: all existing members who receive call_join check if they should offer
-  // Members with me.id > newcomer.id → createOffer to newcomer (already done above)
-  // Members with me.id < newcomer.id → wait; newcomer will see them in presence and ...
-  // Actually: newcomer bcast call_join. Members receive it. Newcomer needs to also offer members with smaller ID.
-  // We need a reverse path: newcomer discovers existing members from presence state
-  // FIX: After joining, newcomer sends offers to all existing call members with smaller IDs
+  /* else: wait — the newcomer will offer us (if we have smaller ID) */
 }
 
-// Called after joinCall to offer connections to pre-existing members with smaller IDs
-function connectToExistingCallMembers(){
-  // Get all call participants (those who have peer connections or are in the call UI)
-  const participantIds = [];
-  if(callType === 'video'){
-    document.querySelectorAll('[id^="vt-"]').forEach(el => {
-      const uid = el.id.slice(3);
-      if(uid !== me.id) participantIds.push(uid);
-    });
-  } else {
-    document.querySelectorAll('[id^="cp-"]').forEach(el => {
-      const uid = el.id.slice(3);
-      if(uid !== me.id) participantIds.push(uid);
-    });
-  }
-  participantIds.forEach(uid => {
-    if(me.id < uid){
-      // I (newcomer with smaller ID) offer to this existing member
-      const u = users.get(uid);
-      if(u) createOfferFor(uid, u.name, u.color);
-    }
-    // else: existing member with smaller ID will offer me (handled in their onCallJoin)
-  });
-}
-
-async function createOfferFor(targetId, targetName, targetColor){
+async function createOfferFor(targetId,targetName,targetColor){
   if(peerConnections.has(targetId)){
-    peerConnections.get(targetId).close();
+    try{peerConnections.get(targetId).close();}catch(e){}
     peerConnections.delete(targetId);
   }
-  const pc = createPC(targetId, targetName, targetColor);
+  const pc=createPC(targetId,targetName,targetColor);
   try{
-    const offer = await pc.createOffer();
+    const offer=await pc.createOffer();
     await pc.setLocalDescription(offer);
-    bcast('call_offer', {from:me.id, fromName:me.name, fromColor:me.color, to:targetId, sdp:pc.localDescription, callType});
+    bcast('call_offer',{from:me.id,fromName:me.name,fromColor:me.color,to:targetId,sdp:pc.localDescription,callType});
   }catch(e){
-    console.warn('[GR] createOffer failed:', e);
+    console.warn('[GR] createOffer failed:',e);
     peerConnections.delete(targetId);
   }
 }
 
 async function onCallOffer(payload){
-  const uid   = String(payload.from).slice(0,40);
-  const name  = String(payload.fromName||'OPERATIVE').slice(0,20);
-  const color = safeColor(payload.fromColor);
+  const uid=String(payload.from).slice(0,40);
+  const name=String(payload.fromName||'OPERATIVE').slice(0,20);
+  const color=safeColor(payload.fromColor);
 
-  // Auto-join if receiving an offer while not in a call
+  /* Auto-join if not already in a call */
   if(!callActive){
-    callType = payload.callType || 'voice';
-    callActive = true; isMuted = false; isCamOff = false;
+    callType=payload.callType||'voice';
+    callActive=true;isMuted=false;isCamOff=false;
     updateCallUI();
     try{
-      const constraints = callType==='video'
-        ? {audio:true, video:{width:{ideal:640}, height:{ideal:480}}}
-        : {audio:true, video:false};
-      localStream = await navigator.mediaDevices.getUserMedia(constraints);
-    }catch(e){ localStream = null; }
+      const constraints=callType==='video'
+        ?{audio:true,video:{width:{ideal:640},height:{ideal:480}}}
+        :{audio:true,video:false};
+      localStream=await navigator.mediaDevices.getUserMedia(constraints);
+    }catch(e){localStream=null;}
     showCallOverlay(callType);
-    addCallParticipantUI(me.id, me.name, me.color, callType);
-    startCallTimer(); updateCallSidebar();
-    bcast('call_join', {from:me.id, fromName:me.name, fromColor:me.color, callType});
+    addCallParticipantUI(me.id,me.name,me.color,callType);
+    startCallTimer();updateCallSidebar();
+    bcast('call_join',{from:me.id,fromName:me.name,fromColor:me.color,callType});
   }
 
-  addCallParticipantUI(uid, name, color, callType);
+  addCallParticipantUI(uid,name,color,callType);
 
-  // FIX: Handle glare — if we already sent an offer to this peer AND we are the polite one, roll back
-  let pc = peerConnections.get(uid);
+  let pc=peerConnections.get(uid);
   if(pc){
-    // If our peer connection is already in a state where we sent an offer (have-local-offer),
-    // and we're the polite peer, roll back
-    if(pc.signalingState === 'have-local-offer'){
-      if(me.id < uid){
-        // We are polite — rollback and accept their offer
-        try{ await pc.setLocalDescription({type:'rollback'}); }catch(e){}
-      } else {
-        // We are impolite — ignore their offer, our offer takes precedence
+    /* Glare handling: if we have a pending local offer AND we're the polite peer, rollback */
+    if(pc.signalingState==='have-local-offer'){
+      if(me.id<uid){
+        /* We are polite — accept their offer, rollback ours */
+        try{await pc.setLocalDescription({type:'rollback'});}catch(e){}
+      }else{
+        /* We are impolite — ignore their offer, ours takes priority */
         return;
       }
     }
-  } else {
-    pc = createPC(uid, name, color);
+  }else{
+    pc=createPC(uid,name,color);
   }
 
   try{
     await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-    // Apply buffered ICE candidates
-    const buffered = pendingIceCandidates.get(uid) || [];
-    for(const c of buffered){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} }
+    /* Apply buffered ICE candidates */
+    const buffered=pendingIceCandidates.get(uid)||[];
+    for(const c of buffered){try{await pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
     pendingIceCandidates.delete(uid);
-    const answer = await pc.createAnswer();
+    const answer=await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    bcast('call_answer', {from:me.id, fromName:me.name, fromColor:me.color, to:uid, sdp:pc.localDescription});
+    bcast('call_answer',{from:me.id,fromName:me.name,fromColor:me.color,to:uid,sdp:pc.localDescription});
   }catch(e){
-    console.warn('[GR] onCallOffer processing error:', e);
+    console.warn('[GR] onCallOffer error:',e);
   }
 }
 
 async function onCallAnswer(payload){
-  const uid = String(payload.from).slice(0,40);
-  const pc = peerConnections.get(uid);
-  if(!pc){ console.warn('[GR] onCallAnswer: no PC for', uid); return; }
-  if(pc.signalingState !== 'have-local-offer'){
-    console.warn('[GR] onCallAnswer: wrong state', pc.signalingState); return;
-  }
+  const uid=String(payload.from).slice(0,40);
+  const pc=peerConnections.get(uid);
+  if(!pc){console.warn('[GR] onCallAnswer: no PC for',uid);return;}
+  if(pc.signalingState!=='have-local-offer'){console.warn('[GR] onCallAnswer: wrong state',pc.signalingState);return;}
   try{
     await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-    const buffered = pendingIceCandidates.get(uid) || [];
-    for(const c of buffered){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} }
+    const buffered=pendingIceCandidates.get(uid)||[];
+    for(const c of buffered){try{await pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
     pendingIceCandidates.delete(uid);
-  }catch(e){
-    console.warn('[GR] onCallAnswer error:', e);
-  }
+  }catch(e){console.warn('[GR] onCallAnswer error:',e);}
 }
 
 async function onCallIce(payload){
-  const uid = String(payload.from).slice(0,40);
-  const pc  = peerConnections.get(uid);
-  if(pc && pc.remoteDescription && pc.remoteDescription.type){
-    try{ await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)); }catch(e){}
-  } else {
-    if(!pendingIceCandidates.has(uid)) pendingIceCandidates.set(uid, []);
+  const uid=String(payload.from).slice(0,40);
+  const pc=peerConnections.get(uid);
+  if(pc&&pc.remoteDescription?.type){
+    try{await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));}catch(e){}
+  }else{
+    if(!pendingIceCandidates.has(uid))pendingIceCandidates.set(uid,[]);
     pendingIceCandidates.get(uid).push(payload.candidate);
   }
 }
 
-function createPC(targetId, targetName, targetColor){
-  const pc = new RTCPeerConnection(ICE_SERVERS);
-  peerConnections.set(targetId, pc);
+function createPC(targetId,targetName,targetColor){
+  const pc=new RTCPeerConnection(ICE_SERVERS);
+  peerConnections.set(targetId,pc);
 
-  // Add local tracks
-  if(localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  if(localStream)localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
 
-  // ICE candidates
-  pc.onicecandidate = e => {
-    if(e.candidate) bcast('call_ice', {from:me.id, to:targetId, candidate:e.candidate.toJSON()});
+  pc.onicecandidate=e=>{
+    if(e.candidate)bcast('call_ice',{from:me.id,to:targetId,candidate:e.candidate.toJSON()});
   };
 
-  // Remote stream
-  pc.ontrack = e => {
-    if(e.streams && e.streams[0]) attachRemoteStream(targetId, targetName, targetColor, e.streams[0]);
+  pc.ontrack=e=>{
+    if(e.streams&&e.streams[0])attachRemoteStream(targetId,targetName,targetColor,e.streams[0]);
   };
 
-  pc.oniceconnectionstatechange = () => {
-    if(pc.iceConnectionState === 'failed'){
-      // Try ICE restart
-      if(me.id > targetId) pc.restartIce();
+  pc.oniceconnectionstatechange=()=>{
+    if(pc.iceConnectionState==='failed'){
+      if(me.id>targetId)try{pc.restartIce();}catch(e){}
     }
-    if(pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'closed'){
-      setTimeout(() => {
-        const current = peerConnections.get(targetId);
-        if(current === pc) onCallRemoteLeave(targetId);
-      }, 3000); // Grace period
+    if(pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='closed'){
+      setTimeout(()=>{
+        if(peerConnections.get(targetId)===pc)onCallRemoteLeave(targetId);
+      },3000);
     }
   };
 
-  pc.onnegotiationneeded = async () => {
-    // Only the impolite peer (larger ID) should renegotiate
-    if(me.id > targetId){
+  pc.onnegotiationneeded=async()=>{
+    if(me.id>targetId){
       try{
-        const offer = await pc.createOffer();
-        if(pc.signalingState !== 'stable') return;
+        const offer=await pc.createOffer();
+        if(pc.signalingState!=='stable')return;
         await pc.setLocalDescription(offer);
-        bcast('call_offer', {from:me.id, fromName:me.name, fromColor:me.color, to:targetId, sdp:pc.localDescription, callType});
-      }catch(e){ console.warn('[GR] renegotiation:', e); }
+        bcast('call_offer',{from:me.id,fromName:me.name,fromColor:me.color,to:targetId,sdp:pc.localDescription,callType});
+      }catch(e){console.warn('[GR] renegotiation:',e);}
     }
   };
 
   return pc;
 }
 
-function attachRemoteStream(uid, name, color, stream){
-  if(callType === 'video'){
-    let tile = document.getElementById('vt-' + CSS.escape(uid));
-    if(!tile){ tile = makeVideoTile(uid, name, color); document.getElementById('call-video-layout').appendChild(tile); updateVideoGrid(); }
-    const vid = tile.querySelector('video');
-    if(vid){ vid.srcObject = stream; vid.play().catch(()=>{}); }
+function attachRemoteStream(uid,name,color,stream){
+  if(callType==='video'){
+    let tile=document.getElementById('vt-'+CSS.escape(uid));
+    if(!tile){tile=makeVideoTile(uid,name,color);document.getElementById('call-video-layout').appendChild(tile);updateVideoGrid();}
+    const vid=tile.querySelector('video');
+    if(vid){vid.srcObject=stream;vid.play().catch(()=>{});}
     tile.classList.remove('no-video');
-  } else {
-    let audio = document.getElementById('ra-' + CSS.escape(uid));
+  }else{
+    let audio=document.getElementById('ra-'+CSS.escape(uid));
     if(!audio){
-      audio = document.createElement('audio'); audio.id = 'ra-' + uid;
-      audio.autoplay = true; audio.style.display = 'none'; document.body.appendChild(audio);
+      audio=document.createElement('audio');audio.id='ra-'+uid;
+      audio.autoplay=true;audio.style.display='none';document.body.appendChild(audio);
     }
-    audio.srcObject = stream; audio.play().catch(()=>{});
+    audio.srcObject=stream;audio.play().catch(()=>{});
   }
 }
 
-function addCallParticipantUI(uid, name, color, type){
-  if(type === 'video'){
-    const layout = document.getElementById('call-video-layout');
-    if(document.getElementById('vt-' + CSS.escape(uid))) return;
-    const tile = makeVideoTile(uid, name, color);
+function addCallParticipantUI(uid,name,type){
+  const color=arguments[2]; /* uid, name, color, type */
+  const actualType=arguments[3]||callType;
+  if(actualType==='video'){
+    const layout=document.getElementById('call-video-layout');
+    if(document.getElementById('vt-'+CSS.escape(uid)))return;
+    const tile=makeVideoTile(uid,name,color);
     layout.appendChild(tile);
-    if(uid === me.id && localStream){
-      const vid = tile.querySelector('video');
-      if(vid){ vid.srcObject = localStream; vid.muted = true; vid.play().catch(()=>{}); }
+    if(uid===me.id&&localStream){
+      const vid=tile.querySelector('video');
+      if(vid){vid.srcObject=localStream;vid.muted=true;vid.play().catch(()=>{});}
       tile.classList.remove('no-video');
     }
     updateVideoGrid();
-  } else {
-    const grid = document.getElementById('call-participants-grid');
-    if(document.getElementById('cp-' + CSS.escape(uid))) return;
-    const div = document.createElement('div');
-    div.className = 'call-participant'; div.id = 'cp-' + uid;
-    div.innerHTML = `<div class="call-p-avatar" style="${avst(color)}">${esc(ini(name))}</div><div class="call-p-name">${esc(name)}</div>`;
+  }else{
+    const grid=document.getElementById('call-participants-grid');
+    if(document.getElementById('cp-'+CSS.escape(uid)))return;
+    const div=document.createElement('div');
+    div.className='call-participant';div.id='cp-'+uid;
+    div.innerHTML=`<div class="call-p-avatar" style="${avst(color)}">${esc(ini(name))}</div><div class="call-p-name">${esc(name)}</div>`;
     grid.appendChild(div);
-    const cnt = grid.children.length;
-    document.getElementById('call-status-txt').textContent = cnt === 1 ? 'WAITING FOR OTHERS...' : cnt + ' OPERATIVES IN CALL';
+    const cnt=grid.children.length;
+    document.getElementById('call-status-txt').textContent=cnt===1?'WAITING FOR OTHERS...':cnt+' OPERATIVES IN CALL';
   }
 }
 
-function makeVideoTile(uid, name, color){
-  const tile = document.createElement('div');
-  tile.className = 'video-tile no-video'; tile.id = 'vt-' + uid;
-  tile.innerHTML = `<video autoplay playsinline ${uid===me.id?'muted':''}></video>
+function makeVideoTile(uid,name,color){
+  const tile=document.createElement('div');
+  tile.className='video-tile no-video';tile.id='vt-'+uid;
+  tile.innerHTML=`<video autoplay playsinline ${uid===me.id?'muted':''}></video>
     <div class="v-avatar" style="${avst(color)}">${esc(ini(name))}</div>
     <div class="v-name">${esc(name)}</div>
     <div class="video-tile-label">${esc(name)}${uid===me.id?' (YOU)':''}</div>`;
   return tile;
 }
+
 function updateVideoGrid(){
-  const layout = document.getElementById('call-video-layout');
-  const cnt = layout.children.length;
-  if(cnt <= 1)      layout.style.gridTemplateColumns = '1fr';
-  else if(cnt <= 2) layout.style.gridTemplateColumns = '1fr 1fr';
-  else if(cnt <= 4) layout.style.gridTemplateColumns = '1fr 1fr';
-  else              layout.style.gridTemplateColumns = 'repeat(3,1fr)';
+  const layout=document.getElementById('call-video-layout');
+  const cnt=layout.children.length;
+  layout.style.gridTemplateColumns=cnt<=1?'1fr':cnt<=2?'1fr 1fr':cnt<=4?'1fr 1fr':'repeat(3,1fr)';
 }
 
 function onCallRemoteLeave(uid){
-  const pc = peerConnections.get(uid);
-  if(pc){ try{ pc.close(); }catch(e){} peerConnections.delete(uid); }
-
-  document.getElementById('cp-' + CSS.escape(uid))?.remove();
-  document.getElementById('vt-' + CSS.escape(uid))?.remove();
-  document.getElementById('ra-' + CSS.escape(uid))?.remove();
+  const pc=peerConnections.get(uid);
+  if(pc){try{pc.close();}catch(e){}peerConnections.delete(uid);}
+  document.getElementById('cp-'+CSS.escape(uid))?.remove();
+  document.getElementById('vt-'+CSS.escape(uid))?.remove();
+  document.getElementById('ra-'+CSS.escape(uid))?.remove();
   updateVideoGrid();
-
-  const name = users.get(uid)?.name || 'OPERATIVE';
+  const name=users.get(uid)?.name||'OPERATIVE';
   addSys(`<span>${esc(name)}</span> LEFT THE CALL`);
-
-  const grid = document.getElementById('call-participants-grid');
-  const cnt = (callType==='video' ? document.getElementById('call-video-layout').children.length : grid.children.length);
-  if(cnt <= 1) document.getElementById('call-status-txt').textContent = 'WAITING FOR OTHERS...';
-  else document.getElementById('call-status-txt').textContent = cnt + ' OPERATIVES IN CALL';
+  const grid=document.getElementById('call-participants-grid');
+  const cnt=callType==='video'
+    ?document.getElementById('call-video-layout').children.length
+    :grid.children.length;
+  if(cnt<=1)document.getElementById('call-status-txt').textContent='WAITING FOR OTHERS...';
+  else document.getElementById('call-status-txt').textContent=cnt+' OPERATIVES IN CALL';
 }
 
 function showCallOverlay(type){
-  const overlay = document.getElementById('call-overlay');
+  const overlay=document.getElementById('call-overlay');
   overlay.classList.add('show');
-  document.getElementById('call-title-bar').textContent = type==='video' ? 'VIDEO CALL — GALAXY RELAY' : 'VOICE CALL — GALAXY RELAY';
-  document.getElementById('call-voice-layout').style.display = type==='video' ? 'none' : 'flex';
-  document.getElementById('call-video-layout').style.display = type==='video' ? 'grid' : 'none';
-  document.getElementById('btn-call-cam').style.display = type==='video' ? 'flex' : 'none';
-  document.getElementById('btn-call-mute').textContent = '🎤';
+  document.getElementById('call-title-bar').textContent=type==='video'?'VIDEO CALL — GALAXY RELAY':'VOICE CALL — GALAXY RELAY';
+  document.getElementById('call-voice-layout').style.display=type==='video'?'none':'flex';
+  document.getElementById('call-video-layout').style.display=type==='video'?'grid':'none';
+  document.getElementById('btn-call-cam').style.display=type==='video'?'flex':'none';
+  document.getElementById('btn-call-mute').textContent='🎤';
   document.getElementById('btn-call-mute').classList.remove('active');
-  document.getElementById('btn-call-cam').textContent = '📷';
+  document.getElementById('btn-call-cam').textContent='📷';
   document.getElementById('btn-call-cam').classList.remove('active');
 }
 
 function startCallTimer(){
-  callSeconds = 0; clearInterval(callTimerIv);
-  callTimerIv = setInterval(() => {
+  callSeconds=0;clearInterval(callTimerIv);
+  callTimerIv=setInterval(()=>{
     callSeconds++;
-    const m = Math.floor(callSeconds/60), s = String(callSeconds%60).padStart(2,'0');
-    document.getElementById('call-timer').textContent = `${m}:${s}`;
-  }, 1000);
+    const m=Math.floor(callSeconds/60),s=String(callSeconds%60).padStart(2,'0');
+    document.getElementById('call-timer').textContent=`${m}:${s}`;
+  },1000);
 }
 
 function updateCallUI(){
-  const vBtn   = document.getElementById('btn-sidebar-voice');
-  const vidBtn = document.getElementById('btn-sidebar-video');
-  vBtn.classList.toggle('active-call',   callActive && callType==='voice');
-  vidBtn.classList.toggle('active-call', callActive && callType==='video');
+  document.getElementById('btn-sidebar-voice').classList.toggle('active-call',callActive&&callType==='voice');
+  document.getElementById('btn-sidebar-video').classList.toggle('active-call',callActive&&callType==='video');
   updateSub();
 }
-function updateCallSidebar(){ renderUsers(); updateCallUI(); }
+function updateCallSidebar(){renderUsers();updateCallUI();}
 
 /* Call controls */
-document.getElementById('btn-call-mute').addEventListener('click', function(){
-  isMuted = !isMuted; this.classList.toggle('active', isMuted); this.textContent = isMuted ? '🔇' : '🎤';
-  if(localStream) localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+document.getElementById('btn-call-mute').addEventListener('click',function(){
+  isMuted=!isMuted;this.classList.toggle('active',isMuted);this.textContent=isMuted?'🔇':'🎤';
+  if(localStream)localStream.getAudioTracks().forEach(t=>{t.enabled=!isMuted;});
 });
-document.getElementById('btn-call-cam').addEventListener('click', function(){
-  isCamOff = !isCamOff; this.classList.toggle('active', isCamOff); this.textContent = isCamOff ? '🚫' : '📷';
-  if(localStream) localStream.getVideoTracks().forEach(t => { t.enabled = !isCamOff; });
-  const myTile = document.getElementById('vt-' + CSS.escape(me?.id));
-  if(myTile) myTile.classList.toggle('no-video', isCamOff);
+document.getElementById('btn-call-cam').addEventListener('click',function(){
+  isCamOff=!isCamOff;this.classList.toggle('active',isCamOff);this.textContent=isCamOff?'🚫':'📷';
+  if(localStream)localStream.getVideoTracks().forEach(t=>{t.enabled=!isCamOff;});
+  const myTile=document.getElementById('vt-'+CSS.escape(me?.id));
+  if(myTile)myTile.classList.toggle('no-video',isCamOff);
 });
-document.getElementById('btn-call-speaker').addEventListener('click', function(){
+document.getElementById('btn-call-speaker').addEventListener('click',function(){
   this.classList.toggle('active');
 });
-document.getElementById('btn-call-end').addEventListener('click', endCall);
+document.getElementById('btn-call-end').addEventListener('click',endCall);
 
 function endCall(){
-  if(!callActive) return;
-  bcast('call_leave', {from:me.id});
-  peerConnections.forEach(pc => { try{ pc.close(); }catch(e){} }); peerConnections.clear();
+  if(!callActive)return;
+  bcast('call_leave',{from:me.id});
+  peerConnections.forEach(pc=>{try{pc.close();}catch(e){}});peerConnections.clear();
   pendingIceCandidates.clear();
-  if(localStream){ localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  document.querySelectorAll('[id^="ra-"]').forEach(el => el.remove());
-  callActive = false; callType = null; clearInterval(callTimerIv); callTimerIv = null;
-  callSeconds = 0; isMuted = false; isCamOff = false;
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  document.querySelectorAll('[id^="ra-"]').forEach(el=>el.remove());
+  callActive=false;callType=null;clearInterval(callTimerIv);callTimerIv=null;
+  callSeconds=0;isMuted=false;isCamOff=false;
   document.getElementById('call-overlay').classList.remove('show');
-  document.getElementById('call-participants-grid').innerHTML = '';
-  document.getElementById('call-video-layout').innerHTML = '';
-  document.getElementById('call-timer').textContent = '0:00';
-  document.getElementById('call-status-txt').textContent = 'WAITING FOR OTHERS TO JOIN...';
-  updateCallUI(); renderUsers();
+  document.getElementById('call-participants-grid').innerHTML='';
+  document.getElementById('call-video-layout').innerHTML='';
+  document.getElementById('call-timer').textContent='0:00';
+  document.getElementById('call-status-txt').textContent='WAITING FOR OTHERS TO JOIN...';
+  updateCallUI();renderUsers();
   addSys(`<span style="color:${me?.color}">${esc(me?.name||'OPERATIVE')}</span> ENDED THE CALL`);
 }
+
+/* ══ ACTIVITY TRACKING ══ */
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&me){
+    clearTimeout(typT);
+    if(isTyping){isTyping=false;bcast('stop_typing',{userId:me.id});}
+  }
+});
+window.addEventListener('beforeunload',()=>{
+  isLeavingIntentionally=true;
+  endCall();
+  if(ch){try{ch.untrack();}catch(e){}try{sb.removeChannel(ch);}catch(e){}}
+});
 </script>
 </body>
 </html>
