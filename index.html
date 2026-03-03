@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#050a05">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Galaxy Relay — Omnitrix Comms</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -224,8 +225,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 /* CALL OVERLAY */
 .call-overlay{position:fixed;inset:0;z-index:800;display:none;flex-direction:column;background:rgba(2,6,2,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
 .call-overlay.show{display:flex;}
-.call-voice-layout{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:20px;}
-.call-title-bar{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--omni);letter-spacing:3px;text-align:center;opacity:0.8;}
+.call-voice-layout{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:20px;padding-top:calc(20px + var(--sat));}
+.call-title-bar{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--omni);letter-spacing:3px;text-align:center;opacity:0.8;padding-top:calc(8px + var(--sat));flex-shrink:0;}
 .call-participants-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:600px;}
 .call-participant{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 16px;background:rgba(0,255,65,0.04);border:1px solid rgba(0,255,65,0.12);border-radius:6px;min-width:100px;position:relative;transition:border-color 0.2s,box-shadow 0.2s;}
 .call-participant.speaking{border-color:var(--omni);box-shadow:0 0 16px rgba(0,255,65,0.25);}
@@ -233,8 +234,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 .call-p-name{font-size:10px;font-family:'Orbitron',sans-serif;color:var(--text-dim);letter-spacing:1px;text-align:center;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .call-timer-big{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:var(--omni);letter-spacing:4px;}
 .call-status-txt{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--text-dim);letter-spacing:2px;text-align:center;}
-.call-video-layout{flex:1;display:grid;padding:12px;gap:8px;overflow:hidden;}
-.video-tile{position:relative;background:#0a1a0a;border-radius:8px;overflow:hidden;border:1px solid rgba(0,255,65,0.1);}
+.call-video-layout{flex:1;min-height:0;display:grid;padding:12px;gap:8px;overflow:hidden;align-content:start;}
+.video-tile{position:relative;background:#0a1a0a;border-radius:8px;overflow:hidden;border:1px solid rgba(0,255,65,0.1);min-height:120px;aspect-ratio:16/9;}
 .video-tile video{width:100%;height:100%;object-fit:cover;display:block;}
 .video-tile.local-tile video{transform:scaleX(-1);}
 .video-tile.speaking{border-color:var(--omni);box-shadow:0 0 12px rgba(0,255,65,0.3);}
@@ -251,6 +252,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 .call-ctrl-btn.cam-btn{background:rgba(0,221,255,0.1);color:var(--alien-ice);}
 .call-ctrl-btn.cam-btn.active{background:var(--red);color:#fff;}
 .call-ctrl-btn.speaker-btn{background:rgba(255,255,255,0.08);}
+.call-ctrl-btn.speaker-btn.active{background:rgba(0,255,65,0.18);box-shadow:0 0 12px rgba(0,255,65,0.3);}
 .call-ctrl-btn.end-btn{background:var(--red);width:60px;height:60px;font-size:24px;}
 .call-ctrl-btn.end-btn:hover{background:#cc0022;}
 .incoming-call-notif{position:fixed;top:calc(20px + var(--sat));right:20px;z-index:900;background:rgba(10,26,10,0.98);border:1px solid var(--omni);border-radius:6px;padding:16px 20px;box-shadow:0 0 40px rgba(0,255,65,0.2),0 8px 30px rgba(0,0,0,0.7);display:none;min-width:260px;max-width:300px;}
@@ -357,6 +359,11 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   .call-p-avatar{width:44px;height:44px;}
   .top-bar-actions{gap:4px;}
   .btn-topbar-call{width:30px;height:30px;font-size:14px;}
+  /* Portrait: stack video tiles vertically, full width */
+  .call-video-layout{overflow-y:auto;}
+}
+@media(max-width:700px) and (orientation:portrait){
+  .video-tile{aspect-ratio:4/3;}
 }
 @media(max-width:380px){
   .join-card{padding:24px 16px;}
@@ -398,7 +405,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   <div class="call-controls">
     <button class="call-ctrl-btn mute-btn" id="btn-call-mute" aria-label="Mute">🎤</button>
     <button class="call-ctrl-btn cam-btn" id="btn-call-cam" aria-label="Camera" style="display:none;">📷</button>
-    <button class="call-ctrl-btn speaker-btn" id="btn-call-speaker" aria-label="Speaker">🔊</button>
+    <button class="call-ctrl-btn speaker-btn active" id="btn-call-speaker" aria-label="Speaker">🔊</button>
     <button class="call-ctrl-btn end-btn" id="btn-call-end" aria-label="End call">📵</button>
   </div>
 </div>
@@ -578,7 +585,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   </div>
 </div>
 <!-- END OF PART 1 -->
-<script>
+ <script>
   /* ══ CONFIG ══ */
 const SUPABASE_URL      = 'https://mfzgxqslnykeqfjpnrbn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1memd4cXNsbnlrZXFmanBucmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDIxMTksImV4cCI6MjA4Nzc3ODExOX0.ID0C7loFSzQ7WsRHUU7x8TpYv8gwh04oenKz5lfeVTI';
@@ -638,8 +645,19 @@ let pendingIceCandidates = new Map();
 const ICE_SERVERS = {iceServers:[
   {urls:'stun:stun.l.google.com:19302'},
   {urls:'stun:stun1.l.google.com:19302'},
-  {urls:'stun:stun2.l.google.com:19302'}
-]};
+  {urls:'stun:stun2.l.google.com:19302'},
+  {urls:'stun:stun3.l.google.com:19302'},
+  {urls:'stun:stun4.l.google.com:19302'},
+  /* TURN servers — critical for Android on mobile data / carrier-grade NAT.
+     Multiple providers and TCP fallback for restrictive mobile networks. */
+  {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:80?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
+  /* Secondary TURN fallback */
+  {urls:'turn:freestun.net:3478',username:'free',credential:'free'},
+  {urls:'turn:freestun.net:5349',username:'free',credential:'free'}
+],iceCandidatePoolSize:10};
 const voiceAudioStore = new Map();
 const voiceAudioMap   = new Map();
 
@@ -1523,6 +1541,11 @@ window.addEventListener('beforeunload',()=>{
   isLeavingIntentionally=true;endCall();
   if(ch){try{ch.untrack();}catch(e){}try{sb.removeChannel(ch);}catch(e){}}
 });
+/* Android back-gesture / tab close fires pagehide but NOT beforeunload */
+window.addEventListener('pagehide',()=>{
+  isLeavingIntentionally=true;endCall();
+  if(ch){try{ch.untrack();}catch(e){}try{sb.removeChannel(ch);}catch(e){}}
+});
 
 /* ══ MOBILE SIDEBAR ══ */
 const closeSB=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('show');document.getElementById('btn-menu').setAttribute('aria-expanded','false');};
@@ -1532,8 +1555,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElement
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&me){clearTimeout(typT);if(isTyping){isTyping=false;bcast('stop_typing',{userId:me.id});}}});
 
 /* CONTINUED IN PART 3 */
-</script>
-<script>
+ </script>
+ <script>
   /* ════════════════════════════════════════════════════
    GALAXY RELAY — PART 3 OF 3
    Contains:
@@ -1842,17 +1865,36 @@ async function joinCall(type){
   updateCallUI();
   try{
     const constraints=type==='video'
-      ?{audio:true,video:{width:{ideal:640},height:{ideal:480}}}
+      ?{audio:true,video:{width:{ideal:640},height:{ideal:480},facingMode:{ideal:'user'}}}
       :{audio:true,video:false};
     localStream=await navigator.mediaDevices.getUserMedia(constraints);
   }catch(err){
-    console.warn('[GR] getUserMedia for call:',err);
-    localStream=null;
-    toast('MICROPHONE'+(type==='video'?'/CAMERA':'')+' DENIED — JOINING WITHOUT AUDIO');
+    /* Fallback 1: try without resolution constraints (some Android devices reject them) */
+    if(type==='video'){
+      try{
+        localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:{facingMode:{ideal:'user'}}});
+        toast('CAMERA: REDUCED QUALITY MODE');
+      }catch(err2){
+        /* Fallback 2: any camera, no constraints at all */
+        try{
+          localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true});
+          toast('CAMERA: BASIC MODE — DEVICE LIMIT REACHED');
+        }catch(err3){
+          console.warn('[GR] getUserMedia for call:',err3);
+          localStream=null;
+          toast('MICROPHONE/CAMERA DENIED — JOINING WITHOUT AUDIO/VIDEO');
+        }
+      }
+    }else{
+      console.warn('[GR] getUserMedia for call:',err);
+      localStream=null;
+      toast('MICROPHONE DENIED — JOINING WITHOUT AUDIO');
+    }
   }
   showCallOverlay(type);
   addCallParticipantUI(me.id,me.name,me.color,type);
   startCallTimer();
+  acquireWakeLock();
   bcast('call_join',{from:me.id,fromName:me.name,fromColor:me.color,callType:type});
   updateCallSidebar();
 }
@@ -1973,19 +2015,52 @@ function createPC(targetId,targetName,targetColor){
   pc.onicecandidate=e=>{
     if(e.candidate)bcast('call_ice',{from:me.id,to:targetId,candidate:e.candidate.toJSON()});
   };
-  let _streamAttached=false;
+  const _attachedStreams=new Set();
   pc.ontrack=e=>{
-    /* Guard: only attach stream once per peer connection to prevent duplicate tiles */
-    if(e.streams&&e.streams[0]&&!_streamAttached){
-      _streamAttached=true;
-      attachRemoteStream(targetId,targetName,targetColor,e.streams[0]);
+    if(e.streams&&e.streams[0]){
+      const sid=e.streams[0].id;
+      if(!_attachedStreams.has(sid)){
+        _attachedStreams.add(sid);
+        attachRemoteStream(targetId,targetName,targetColor,e.streams[0]);
+      }
+    }
+    /* Track mute/unmute = remote peer toggled camera/mic */
+    if(e.track&&e.track.kind==='video'){
+      e.track.addEventListener('mute',()=>{
+        const tile=document.getElementById('vt-'+CSS.escape(targetId));
+        if(tile)tile.classList.add('no-video');
+      });
+      e.track.addEventListener('unmute',()=>{
+        const tile=document.getElementById('vt-'+CSS.escape(targetId));
+        if(tile)tile.classList.remove('no-video');
+      });
     }
   };
-  pc.oniceconnectionstatechange=()=>{
+  pc.oniceconnectionstatechange=async()=>{
     if(pc.iceConnectionState==='failed'){
-      if(me.id>targetId)try{pc.restartIce();}catch(e){}
+      console.warn('[GR] ICE failed for',targetId,'— attempting restart');
+      /* Both sides call restartIce so the local candidate pool refreshes */
+      try{pc.restartIce();}catch(e){}
+      /* The offerer side (higher ID) drives the new offer with iceRestart:true.
+         This is needed because restartIce() alone doesn't renegotiate on Android. */
+      if(me.id>targetId&&pc.signalingState==='stable'){
+        try{
+          const offer=await pc.createOffer({iceRestart:true});
+          await pc.setLocalDescription(offer);
+          bcast('call_offer',{from:me.id,fromName:me.name,fromColor:me.color,to:targetId,sdp:pc.localDescription,callType});
+        }catch(e){console.warn('[GR] ICE restart offer failed:',e);}
+      }
     }
-    if(pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='closed'){
+    if(pc.iceConnectionState==='disconnected'){
+      /* Give 5s for Android network switch (WiFi ↔ mobile data) before treating as left */
+      setTimeout(()=>{
+        if(peerConnections.get(targetId)===pc&&
+           (pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='failed'||pc.iceConnectionState==='closed')){
+          onCallRemoteLeave(targetId);
+        }
+      },5000);
+    }
+    if(pc.iceConnectionState==='closed'){
       setTimeout(()=>{
         if(peerConnections.get(targetId)===pc)onCallRemoteLeave(targetId);
       },3000);
@@ -1993,12 +2068,14 @@ function createPC(targetId,targetName,targetColor){
   };
   let _negotiating=false;
   pc.onnegotiationneeded=async()=>{
-    /* Lock to prevent re-entrant negotiation which sends duplicate offers */
-    if(!me||_negotiating||me.id<=targetId)return;
+    /* Prevent re-entrant negotiation. Only the offerer side (existing member)
+       should renegotiate — they created the offer initially via createOfferFor. */
+    if(!me||_negotiating)return;
+    if(pc.signalingState!=='stable')return;
     _negotiating=true;
     try{
       const offer=await pc.createOffer();
-      if(pc.signalingState!=='stable'){_negotiating=false;return;}
+      if(pc.signalingState!=='stable'){return;}
       await pc.setLocalDescription(offer);
       bcast('call_offer',{from:me.id,fromName:me.name,fromColor:me.color,to:targetId,sdp:pc.localDescription,callType});
     }catch(e){console.warn('[GR] renegotiation:',e);}
@@ -2018,15 +2095,31 @@ function attachRemoteStream(uid,name,color,stream){
       if(!tile)return; /* still not found, bail safely */
     }
     const vid=tile.querySelector('video');
-    if(vid&&vid.srcObject!==stream){vid.srcObject=stream;vid.play().catch(()=>{});}
+    if(vid&&vid.srcObject!==stream){
+      vid.srcObject=stream;
+      applySpeakerRouting(vid);
+      vid.play().catch(err=>{
+        console.warn('[GR] remote video autoplay blocked:',err);
+        /* Android Chrome may block autoplay — prompt user to tap */
+        toast('TAP SCREEN TO START VIDEO');
+        /* Add one-time tap-to-play fallback on the tile */
+        const tile=vid.closest('.video-tile');
+        if(tile&&!tile._tapPlay){
+          tile._tapPlay=true;
+          tile.style.cursor='pointer';
+          tile.addEventListener('click',()=>{vid.play().catch(()=>{});tile.style.cursor='';},{once:true});
+        }
+      });
+    }
     tile.classList.remove('no-video');
   }else{
     let audio=document.getElementById('ra-'+CSS.escape(uid));
     if(!audio){
       audio=document.createElement('audio');audio.id='ra-'+CSS.escape(uid);
-      audio.autoplay=true;audio.style.display='none';document.body.appendChild(audio);
+      audio.autoplay=true;audio.playsInline=true;audio.setAttribute('playsinline','');
+      audio.style.display='none';document.body.appendChild(audio);
     }
-    if(audio.srcObject!==stream){audio.srcObject=stream;audio.play().catch(()=>{});}
+    if(audio.srcObject!==stream){audio.srcObject=stream;applySpeakerRouting(audio);audio.play().catch(()=>{});}
   }
 }
 
@@ -2059,7 +2152,7 @@ function addCallParticipantUI(uid,name){
 function makeVideoTile(uid,name,color){
   const tile=document.createElement('div');
   tile.className='video-tile no-video'+(uid===me.id?' local-tile':'');tile.id='vt-'+CSS.escape(uid);
-  tile.innerHTML=`<video autoplay playsinline ${uid===me.id?'muted':''}></video>
+  tile.innerHTML=`<video autoplay playsinline webkit-playsinline ${uid===me.id?'muted':''}></video>
     <div class="v-avatar" style="${avst(color)}">${esc(ini(name))}</div>
     <div class="v-name">${esc(name)}</div>
     <div class="video-tile-label">${esc(name)}${uid===me.id?' (YOU)':''}</div>`;
@@ -2069,7 +2162,15 @@ function makeVideoTile(uid,name,color){
 function updateVideoGrid(){
   const layout=document.getElementById('call-video-layout');
   const cnt=layout.children.length;
-  layout.style.gridTemplateColumns=cnt<=1?'1fr':cnt<=2?'1fr 1fr':cnt<=4?'1fr 1fr':'repeat(3,1fr)';
+  const isPortrait=window.matchMedia('(orientation:portrait)').matches;
+  let cols;
+  if(isPortrait){
+    /* Portrait: always single column for readability */
+    cols='1fr';
+  }else{
+    cols=cnt<=1?'1fr':cnt<=2?'1fr 1fr':cnt<=4?'1fr 1fr':'repeat(3,1fr)';
+  }
+  layout.style.gridTemplateColumns=cols;
 }
 
 function onCallRemoteLeave(uid){
@@ -2129,9 +2230,38 @@ document.getElementById('btn-call-cam').addEventListener('click',function(){
   const myTile=document.getElementById('vt-'+CSS.escape(me?.id));
   if(myTile)myTile.classList.toggle('no-video',isCamOff);
 });
-document.getElementById('btn-call-speaker').addEventListener('click',function(){
+document.getElementById('btn-call-speaker').addEventListener('click',async function(){
   this.classList.toggle('active');
+  const isSpeaker=this.classList.contains('active');
+  this.textContent=isSpeaker?'🔊':'🔈';
+  /* Route audio output — setSinkId supported on Chrome/Android.
+     'default' = system default (loudspeaker); '' = earpiece/default device */
+  const targetSink=isSpeaker?'default':'';
+  /* Remote audio elements (voice call) */
+  document.querySelectorAll('[id^="ra-"]').forEach(async el=>{
+    if(typeof el.setSinkId==='function'){
+      try{await el.setSinkId(targetSink);}catch(e){console.warn('[GR] setSinkId audio:',e);}
+    }
+  });
+  /* Remote video elements (video call) — audio comes from video srcObject */
+  document.querySelectorAll('.video-tile:not(.local-tile) video').forEach(async el=>{
+    if(typeof el.setSinkId==='function'){
+      try{await el.setSinkId(targetSink);}catch(e){console.warn('[GR] setSinkId video:',e);}
+    }
+  });
+  if(!isSpeaker&&typeof HTMLMediaElement.prototype.setSinkId==='undefined'){
+    toast('SPEAKER ROUTING NOT SUPPORTED IN THIS BROWSER');
+  }
 });
+
+/* Helper: apply current speaker routing to a newly added media element */
+function applySpeakerRouting(el){
+  const isSpeaker=document.getElementById('btn-call-speaker').classList.contains('active');
+  const targetSink=isSpeaker?'default':'';
+  if(typeof el.setSinkId==='function'){
+    el.setSinkId(targetSink).catch(()=>{});
+  }
+}
 document.getElementById('btn-call-end').addEventListener('click',endCall);
 
 function endCall(){
@@ -2143,6 +2273,7 @@ function endCall(){
   document.querySelectorAll('[id^="ra-"]').forEach(el=>el.remove());
   callActive=false;callType=null;clearInterval(callTimerIv);callTimerIv=null;
   callSeconds=0;isMuted=false;isCamOff=false;
+  releaseWakeLock();
   document.getElementById('call-overlay').classList.remove('show');
   document.getElementById('call-participants-grid').innerHTML='';
   document.getElementById('call-video-layout').innerHTML='';
@@ -2153,17 +2284,55 @@ function endCall(){
 }
 
 /* ══ ACTIVITY TRACKING ══ */
-document.addEventListener('visibilitychange',()=>{
+/* Screen Wake Lock — prevents screen dimming/locking during calls */
+let _wakeLock = null;
+async function acquireWakeLock(){
+  if(!('wakeLock' in navigator))return;
+  try{
+    _wakeLock = await navigator.wakeLock.request('screen');
+    _wakeLock.addEventListener('release',()=>{_wakeLock=null;});
+  }catch(e){console.warn('[GR] WakeLock:',e);}
+}
+function releaseWakeLock(){
+  if(_wakeLock){_wakeLock.release().catch(()=>{});_wakeLock=null;}
+}
+/* Re-acquire wake lock if released while call is active (e.g. screen turned on again) */
+document.addEventListener('visibilitychange',async()=>{
   if(document.hidden&&me){
     clearTimeout(typT);
     if(isTyping){isTyping=false;bcast('stop_typing',{userId:me.id});}
   }
+  /* Re-acquire wake lock when page becomes visible again during a call */
+  if(!document.hidden&&callActive&&!_wakeLock){
+    acquireWakeLock();
+  }
+  /* Android fix: re-attach streams when returning from background to unfreeze video/audio */
+  if(!document.hidden&&callActive){
+    /* Re-attach local video */
+    const myTile=document.getElementById('vt-'+CSS.escape(me?.id));
+    const myVid=myTile?.querySelector('video');
+    if(myVid&&localStream){myVid.srcObject=null;myVid.srcObject=localStream;myVid.play().catch(()=>{});}
+    /* Re-play all remote video tiles */
+    document.querySelectorAll('.video-tile:not(.local-tile) video').forEach(v=>{
+      if(v.srcObject&&v.paused){v.play().catch(()=>{});}
+    });
+    /* Re-play all remote audio elements */
+    document.querySelectorAll('[id^="ra-"]').forEach(a=>{
+      if(a.srcObject&&a.paused){a.play().catch(()=>{});}
+    });
+  }
 });
-window.addEventListener('beforeunload',()=>{
+/* Re-layout video grid on orientation change */
+window.addEventListener('orientationchange',()=>{setTimeout(()=>{if(callActive&&callType==='video')updateVideoGrid();},300);});
+window.matchMedia('(orientation:portrait)').addEventListener('change',()=>{if(callActive&&callType==='video')updateVideoGrid();});
+
+/* pagehide fires on Android back-gesture / tab close where beforeunload may not.
+   Ensures call cleanup and presence removal even when the page is being cached/killed. */
+window.addEventListener('pagehide',()=>{
   isLeavingIntentionally=true;
   endCall();
   if(ch){try{ch.untrack();}catch(e){}try{sb.removeChannel(ch);}catch(e){}}
 });
-</script>
+ </script>
 </body>
 </html>
