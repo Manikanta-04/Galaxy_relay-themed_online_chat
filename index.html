@@ -1040,6 +1040,7 @@ function setupChannel(){
   ch.on('broadcast',{event:'call_answer'}, ({payload})=>{if(payload?.to===me.id)onCallAnswer(payload);});
   ch.on('broadcast',{event:'call_ice'},    ({payload})=>{if(payload?.to===me.id)onCallIce(payload);});
   ch.on('broadcast',{event:'call_join'},   ({payload})=>{if(payload?.from&&payload.from!==me.id)onCallJoin(payload);});
+  ch.on('broadcast',{event:'call_roster'}, ({payload})=>{if(payload?.to===me.id)onCallRoster(payload);});
   ch.on('broadcast',{event:'call_leave'},  ({payload})=>{if(payload?.from&&payload.from!==me.id)onCallRemoteLeave(payload.from);});
   ch.on('broadcast',{event:'call_invite'}, ({payload})=>{if(payload?.from!==me.id)onCallInvite(payload);});
   ch.subscribe(async s=>{
@@ -1862,20 +1863,40 @@ function onCallJoin(payload){
   const name=String(payload.fromName||'OPERATIVE').slice(0,20);
   const color=safeColor(payload.fromColor);
   addCallParticipantUI(uid,name,color,callType);
-  /* Only create offer if no active PC exists yet for this peer */
-  if(me.id>uid){
-    const existing=peerConnections.get(uid);
-    if(!existing||existing.signalingState==='closed'){
-      createOfferFor(uid,name,color);
-    }
+  /* Reply with roster so the new joiner discovers all existing members */
+  bcast('call_roster',{to:uid,from:me.id,fromName:me.name,fromColor:me.color,callType});
+  /* Existing members always create the offer TO the new joiner.
+     The new joiner will answer via onCallOffer. This avoids the glare
+     problem where both sides simultaneously try to offer. */
+  const existing=peerConnections.get(uid);
+  if(!existing||existing.signalingState==='closed'){
+    createOfferFor(uid,name,color);
   }
 }
 
+/* Called when an existing member replies to our call_join with their info.
+   We now know they exist — add their tile and let them drive the offer
+   (they already sent it via onCallJoin → createOfferFor). */
+function onCallRoster(payload){
+  if(!callActive)return;
+  const uid=String(payload.from).slice(0,40);
+  if(uid===me.id)return;
+  const name=String(payload.fromName||'OPERATIVE').slice(0,20);
+  const color=safeColor(payload.fromColor);
+  /* Add their tile if we don't have it yet — the offer will arrive shortly */
+  addCallParticipantUI(uid,name,color,callType);
+  /* If we somehow don't have a PC yet AND no offer has arrived, we can create one.
+     But normally the existing member already sent us an offer via onCallJoin. */
+}
+
 async function createOfferFor(targetId,targetName,targetColor){
-  if(peerConnections.has(targetId)){
-    try{peerConnections.get(targetId).close();}catch(e){}
-    peerConnections.delete(targetId);
+  /* Don't create a new offer if a stable or in-progress PC already exists */
+  const existing=peerConnections.get(targetId);
+  if(existing&&existing.signalingState!=='closed'){
+    /* Already have a live connection, skip */
+    return;
   }
+  if(existing){try{existing.close();}catch(e){}peerConnections.delete(targetId);}
   const pc=createPC(targetId,targetName,targetColor);
   try{
     const offer=await pc.createOffer();
