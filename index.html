@@ -1858,10 +1858,17 @@ async function joinCall(type){
 function onCallJoin(payload){
   if(!callActive)return;
   const uid=String(payload.from).slice(0,40);
+  if(uid===me.id)return; /* ignore own broadcast echoed back */
   const name=String(payload.fromName||'OPERATIVE').slice(0,20);
   const color=safeColor(payload.fromColor);
   addCallParticipantUI(uid,name,color,callType);
-  if(me.id>uid){ createOfferFor(uid,name,color); }
+  /* Only create offer if no active PC exists yet for this peer */
+  if(me.id>uid){
+    const existing=peerConnections.get(uid);
+    if(!existing||existing.signalingState==='closed'){
+      createOfferFor(uid,name,color);
+    }
+  }
 }
 
 async function createOfferFor(targetId,targetName,targetColor){
@@ -1885,20 +1892,12 @@ async function onCallOffer(payload){
   const name=String(payload.fromName||'OPERATIVE').slice(0,20);
   const color=safeColor(payload.fromColor);
   if(!callActive){
-    callType=payload.callType||'voice';
-    callActive=true;isMuted=false;isCamOff=false;
-    updateCallUI();
-    try{
-      const constraints=callType==='video'
-        ?{audio:true,video:{width:{ideal:640},height:{ideal:480}}}
-        :{audio:true,video:false};
-      localStream=await navigator.mediaDevices.getUserMedia(constraints);
-    }catch(e){localStream=null;}
-    showCallOverlay(callType);
-    addCallParticipantUI(me.id,me.name,me.color,callType);
-    startCallTimer();updateCallSidebar();
-    bcast('call_join',{from:me.id,fromName:me.name,fromColor:me.color,callType});
+    /* joinCall handles: setting callActive, getUserMedia, showCallOverlay,
+       addCallParticipantUI(me), startCallTimer, updateCallSidebar,
+       AND broadcasting call_join exactly once. */
+    await joinCall(payload.callType||'voice');
   }
+  /* Ensure tile exists — addCallParticipantUI is idempotent (deduped by element id) */
   addCallParticipantUI(uid,name,color,callType);
   let pc=peerConnections.get(uid);
   if(pc){
@@ -1952,8 +1951,13 @@ function createPC(targetId,targetName,targetColor){
   pc.onicecandidate=e=>{
     if(e.candidate)bcast('call_ice',{from:me.id,to:targetId,candidate:e.candidate.toJSON()});
   };
+  let _streamAttached=false;
   pc.ontrack=e=>{
-    if(e.streams&&e.streams[0])attachRemoteStream(targetId,targetName,targetColor,e.streams[0]);
+    /* Guard: only attach stream once per peer connection to prevent duplicate tiles */
+    if(e.streams&&e.streams[0]&&!_streamAttached){
+      _streamAttached=true;
+      attachRemoteStream(targetId,targetName,targetColor,e.streams[0]);
+    }
   };
   pc.oniceconnectionstatechange=()=>{
     if(pc.iceConnectionState==='failed'){
@@ -1965,33 +1969,42 @@ function createPC(targetId,targetName,targetColor){
       },3000);
     }
   };
+  let _negotiating=false;
   pc.onnegotiationneeded=async()=>{
-    if(me.id>targetId){
-      try{
-        const offer=await pc.createOffer();
-        if(pc.signalingState!=='stable')return;
-        await pc.setLocalDescription(offer);
-        bcast('call_offer',{from:me.id,fromName:me.name,fromColor:me.color,to:targetId,sdp:pc.localDescription,callType});
-      }catch(e){console.warn('[GR] renegotiation:',e);}
-    }
+    /* Lock to prevent re-entrant negotiation which sends duplicate offers */
+    if(!me||_negotiating||me.id<=targetId)return;
+    _negotiating=true;
+    try{
+      const offer=await pc.createOffer();
+      if(pc.signalingState!=='stable'){_negotiating=false;return;}
+      await pc.setLocalDescription(offer);
+      bcast('call_offer',{from:me.id,fromName:me.name,fromColor:me.color,to:targetId,sdp:pc.localDescription,callType});
+    }catch(e){console.warn('[GR] renegotiation:',e);}
+    finally{_negotiating=false;}
   };
   return pc;
 }
 
 function attachRemoteStream(uid,name,color,stream){
   if(callType==='video'){
+    /* Only attach stream to existing tile — tile creation is handled solely by addCallParticipantUI */
     let tile=document.getElementById('vt-'+CSS.escape(uid));
-    if(!tile){tile=makeVideoTile(uid,name,color);document.getElementById('call-video-layout').appendChild(tile);updateVideoGrid();}
+    if(!tile){
+      /* Rare race: tile not yet in DOM — create it now and it will be deduped by addCallParticipantUI's guard */
+      addCallParticipantUI(uid,name,color,'video');
+      tile=document.getElementById('vt-'+CSS.escape(uid));
+      if(!tile)return; /* still not found, bail safely */
+    }
     const vid=tile.querySelector('video');
-    if(vid){vid.srcObject=stream;vid.play().catch(()=>{});}
+    if(vid&&vid.srcObject!==stream){vid.srcObject=stream;vid.play().catch(()=>{});}
     tile.classList.remove('no-video');
   }else{
     let audio=document.getElementById('ra-'+CSS.escape(uid));
     if(!audio){
-      audio=document.createElement('audio');audio.id='ra-'+uid;
+      audio=document.createElement('audio');audio.id='ra-'+CSS.escape(uid);
       audio.autoplay=true;audio.style.display='none';document.body.appendChild(audio);
     }
-    audio.srcObject=stream;audio.play().catch(()=>{});
+    if(audio.srcObject!==stream){audio.srcObject=stream;audio.play().catch(()=>{});}
   }
 }
 
@@ -2013,7 +2026,7 @@ function addCallParticipantUI(uid,name){
     const grid=document.getElementById('call-participants-grid');
     if(document.getElementById('cp-'+CSS.escape(uid)))return;
     const div=document.createElement('div');
-    div.className='call-participant';div.id='cp-'+uid;
+    div.className='call-participant';div.id='cp-'+CSS.escape(uid);
     div.innerHTML=`<div class="call-p-avatar" style="${avst(color)}">${esc(ini(name))}</div><div class="call-p-name">${esc(name)}</div>`;
     grid.appendChild(div);
     const cnt=grid.children.length;
@@ -2023,7 +2036,7 @@ function addCallParticipantUI(uid,name){
 
 function makeVideoTile(uid,name,color){
   const tile=document.createElement('div');
-  tile.className='video-tile no-video';tile.id='vt-'+uid;
+  tile.className='video-tile no-video';tile.id='vt-'+CSS.escape(uid);
   tile.innerHTML=`<video autoplay playsinline ${uid===me.id?'muted':''}></video>
     <div class="v-avatar" style="${avst(color)}">${esc(ini(name))}</div>
     <div class="v-name">${esc(name)}</div>
