@@ -79,6 +79,9 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 .btn-join:hover:not(:disabled)::before{transform:translateX(100%);}
 .btn-join:active:not(:disabled){transform:scale(0.97);}
 .btn-join:disabled{opacity:0.45;cursor:not-allowed;}
+.btn-admin{display:block;margin:16px auto 0;background:none;border:none;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:9px;color:rgba(0,255,65,0.18);letter-spacing:2px;padding:6px 14px;border-radius:2px;transition:all 0.35s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.btn-admin:hover{color:rgba(0,255,65,0.55);text-shadow:0 0 10px rgba(0,255,65,0.25);}
+.btn-admin:active{transform:scale(0.95);}
 .online-hint{text-align:center;margin-top:14px;font-size:10px;color:var(--text-dim);font-family:'Orbitron',sans-serif;letter-spacing:1px;}
 .online-hint span{color:var(--omni);font-weight:700;}
 
@@ -471,6 +474,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
     <input class="status-input" id="inp-status" type="text" placeholder="What's your mission?" maxlength="60" autocorrect="off" enterkeyhint="go">
     <button class="btn-join" id="btn-join" disabled>⬡ JOIN GALAXY RELAY ⬡</button>
     <div class="online-hint" id="online-hint" aria-live="polite">Connecting to relay...</div>
+    <button class="btn-admin" id="btn-admin-login" title="Admin access">⬡ ADMIN ⬡</button>
   </div>
 </div>
 <div id="chatroom" role="application" aria-label="Galaxy Relay Chat">
@@ -586,10 +590,19 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 </div>
 <!-- END OF PART 1 -->
  <script>
-  /* ══ CONFIG ══ */
+ /* ══ CONFIG ══ */
 const SUPABASE_URL      = 'https://mfzgxqslnykeqfjpnrbn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1memd4cXNsbnlrZXFmanBucmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDIxMTksImV4cCI6MjA4Nzc3ODExOX0.ID0C7loFSzQ7WsRHUU7x8TpYv8gwh04oenKz5lfeVTI';
 const CHANNEL_NAME      = 'galaxy_relay_main';
+
+/* ══ ADMIN CONFIG ══
+   ADMIN_PASSWORD : the secret password you set — change this!
+   DB logging saves every message to Supabase so admin can see history.
+   Set ADMIN_LOG_ENABLED=true only after you run the SQL setup in Supabase.
+═══════════════════════════════════════════════════════════════════════ */
+const ADMIN_PASSWORD    = 'Manikanta@143';   /* ← CHANGE THIS */
+const ADMIN_LOG_ENABLED = true;                /* ← set false if table not created yet */
+const ADMIN_TABLE       = 'gr_messages';
 const MAX_IMG_BYTES     = 200 * 1024;
 const MAX_MSG_LEN       = 500;
 const MAX_STORE         = 300;
@@ -1087,6 +1100,55 @@ function setupChannel(){
   }, 30000);
 }
 
+/* ══ ADMIN DB LOGGING ══ */
+async function logMsgToDB(msg){
+  if(!ADMIN_LOG_ENABLED||!sb)return;
+  try{
+    const row={
+      msg_id:     msg.id,
+      user_id:    msg.userId,
+      user_name:  msg.name,
+      user_color: msg.color,
+      msg_type:   msg.type||'text',
+      content:    msg.type==='text'  ? (msg.text||'')
+                : msg.type==='image' ? '[IMAGE]'
+                : msg.type==='voice' ? '[VOICE '+msg.duration+']'
+                : msg.type==='sticker'? '[STICKER '+msg.text+']'
+                : (msg.text||''),
+      has_image:  msg.type==='image',
+      has_voice:  msg.type==='voice',
+      img_data:   msg.type==='image' ? (msg.imgData||null) : null,
+      audio_data: msg.type==='voice' ? (msg.audioData||null) : null,
+      created_at: new Date(msg.ts||Date.now()).toISOString()
+    };
+    await sb.from(ADMIN_TABLE).insert(row);
+  }catch(e){
+    /* Silently fail — DB logging must never break the chat */
+    console.warn('[GR] DB log failed:',e?.message||e);
+  }
+}
+
+/* Log call events to DB */
+async function logCallToDB(eventType, details){
+  if(!ADMIN_LOG_ENABLED||!sb)return;
+  try{
+    const row={
+      msg_id:     'call_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+      user_id:    details.userId||'system',
+      user_name:  details.userName||'SYSTEM',
+      user_color: details.userColor||'#00ff41',
+      msg_type:   'call_event',
+      content:    eventType+': '+JSON.stringify(details),
+      has_image:  false,
+      has_voice:  false,
+      img_data:   null,
+      audio_data: null,
+      created_at: new Date().toISOString()
+    };
+    await sb.from(ADMIN_TABLE).insert(row);
+  }catch(e){ console.warn('[GR] Call log failed:',e?.message||e); }
+}
+
 const bcast=(ev,pl)=>{if(!ch||!me)return;ch.send({type:'broadcast',event:ev,payload:pl}).catch(e=>console.warn('[GR] bcast:',e));};
 
 /* ══ RENDER USERS ══ */
@@ -1376,7 +1438,7 @@ function sendMsg(){
   if(text.length>MAX_MSG_LEN){toast('MESSAGE TOO LONG — MAX 500 CHARS');return;}
   if(!checkRate())return;
   const msg={id:genId(),userId:me.id,name:me.name,color:me.color,text,ts:Date.now()};
-  addMsg(msg);bcast('message',{msg});input.value='';updateCC();input.style.height='auto';
+  addMsg(msg);bcast('message',{msg});logMsgToDB(msg);input.value='';updateCC();input.style.height='auto';
   const btn=document.getElementById('btn-send');btn.classList.add('sent-anim');setTimeout(()=>btn.classList.remove('sent-anim'),400);
   alienFx();clearTimeout(typT);isTyping=false;bcast('stop_typing',{userId:me.id});
 }
@@ -1430,7 +1492,7 @@ STICKERS.forEach(st=>{
   b.addEventListener('click',()=>{
     if(!me||!checkRate())return;
     const msg={id:genId(),userId:me.id,name:me.name,color:me.color,emoji:st,type:'sticker',ts:Date.now()};
-    addMsg(msg);bcast('message',{msg});alienFx();closeMP();
+    addMsg(msg);bcast('message',{msg});logMsgToDB(msg);alienFx();closeMP();
   });
   sg.appendChild(b);
 });
@@ -1504,7 +1566,7 @@ function sendImg(){
   if(!checkRate())return;
   const cap=String(document.getElementById('img-caption').value).trim().slice(0,200);
   const msg={id:genId(),userId:me.id,name:me.name,color:me.color,text:cap,imgData:pendingImg.dataUrl,imgName:pendingImg.name,ts:Date.now(),type:'image'};
-  addMsg(msg);try{bcast('message',{msg});}catch(e){toast('IMAGE BROADCAST ERROR');console.error(e);}
+  addMsg(msg);try{bcast('message',{msg});logMsgToDB(msg);}catch(e){toast('IMAGE BROADCAST ERROR');console.error(e);}
   clearIP();alienFx();
 }
 
@@ -1530,6 +1592,218 @@ document.getElementById('profanity-toggle').addEventListener('click',function(){
 });
 document.getElementById('profanity-toggle').addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();document.getElementById('profanity-toggle').click();}});
 
+/* ══ ADMIN PANEL ══ */
+let _adminUnlocked = false;
+let _adminTapCount = 0;
+let _adminTapTimer = null;
+
+/* Admin button on the login page → opens password prompt */
+function setupAdminTrigger(){
+  const btn = document.getElementById('btn-admin-login');
+  if(btn) btn.addEventListener('click', showAdminLogin);
+}
+
+function showAdminLogin(){
+  const existing = document.getElementById('admin-login-overlay');
+  if(existing)existing.remove();
+  const ov = document.createElement('div');
+  ov.id = 'admin-login-overlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(2,6,2,0.98);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);';
+  ov.innerHTML=`
+    <div style="background:linear-gradient(145deg,#0a1a0a,#050a05);border:1px solid rgba(0,255,65,0.3);border-radius:8px;padding:36px 32px;width:320px;text-align:center;box-shadow:0 0 60px rgba(0,255,65,0.1);">
+      <div style="font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:#00ff41;letter-spacing:4px;margin-bottom:6px;">ADMIN ACCESS</div>
+      <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:2px;margin-bottom:24px;">GALAXY RELAY COMMAND</div>
+      <input id="admin-pw-input" type="password" placeholder="Enter admin password..." 
+        style="width:100%;background:rgba(0,255,65,0.03);border:1px solid rgba(0,255,65,0.2);border-radius:3px;padding:12px 16px;color:#ccffcc;font-family:'Rajdhani',sans-serif;font-size:16px;outline:none;margin-bottom:12px;">
+      <div id="admin-pw-error" style="font-size:10px;color:#ff3333;font-family:'Orbitron',sans-serif;letter-spacing:1px;height:16px;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button id="admin-login-btn" style="flex:1;padding:12px;background:linear-gradient(135deg,#003311,#005522);border:1px solid #00ff41;border-radius:3px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#00ff41;letter-spacing:2px;">ENTER</button>
+        <button id="admin-cancel-btn" style="padding:12px 16px;background:rgba(255,51,51,0.08);border:1px solid rgba(255,51,51,0.3);border-radius:3px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:11px;color:#ff3333;">✕</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const inp = document.getElementById('admin-pw-input');
+  inp.focus();
+  document.getElementById('admin-cancel-btn').onclick=()=>ov.remove();
+  const tryLogin=()=>{
+    if(inp.value===ADMIN_PASSWORD){
+      _adminUnlocked=true;ov.remove();openAdminDashboard();
+    }else{
+      document.getElementById('admin-pw-error').textContent='INVALID PASSWORD';
+      inp.value='';inp.focus();
+      setTimeout(()=>{ const e=document.getElementById('admin-pw-error'); if(e)e.textContent=''; },2000);
+    }
+  };
+  document.getElementById('admin-login-btn').onclick=tryLogin;
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();if(e.key==='Escape')ov.remove();});
+}
+
+async function openAdminDashboard(){
+  const ov = document.createElement('div');
+  ov.id = 'admin-dashboard';
+  ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(2,6,2,0.99);display:flex;flex-direction:column;backdrop-filter:blur(8px);font-family:Rajdhani,sans-serif;overflow:hidden;';
+  ov.innerHTML=`
+    <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:rgba(0,255,65,0.04);border-bottom:1px solid rgba(0,255,65,0.15);flex-shrink:0;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;color:#00ff41;letter-spacing:3px;flex:1;">⬡ ADMIN COMMAND CENTER</div>
+      <div id="admin-live-badge" style="font-family:'Orbitron',sans-serif;font-size:9px;color:#00ff41;background:rgba(0,255,65,0.1);border:1px solid rgba(0,255,65,0.3);padding:4px 10px;border-radius:2px;letter-spacing:1px;">● LIVE</div>
+      <button id="admin-export-btn" style="background:rgba(0,221,255,0.08);border:1px solid rgba(0,221,255,0.3);border-radius:3px;padding:6px 14px;color:#00ddff;font-family:'Orbitron',sans-serif;font-size:9px;cursor:pointer;letter-spacing:1px;">⬇ EXPORT CSV</button>
+      <button id="admin-close-btn" style="background:rgba(255,51,51,0.08);border:1px solid rgba(255,51,51,0.3);border-radius:3px;width:32px;height:32px;color:#ff3333;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <div style="display:flex;gap:0;flex:1;min-height:0;">
+      <!-- Left: stats panel -->
+      <div style="width:220px;flex-shrink:0;border-right:1px solid rgba(0,255,65,0.1);padding:16px 12px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:2px;margin-bottom:4px;">LIVE STATUS</div>
+        <div id="admin-stats" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:2px;margin-top:12px;">ONLINE NOW</div>
+        <div id="admin-users-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:2px;margin-top:12px;">FILTERS</div>
+        <input id="admin-search" placeholder="Search messages..." style="width:100%;background:rgba(0,255,65,0.03);border:1px solid rgba(0,255,65,0.15);border-radius:3px;padding:8px;color:#ccffcc;font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;">
+        <select id="admin-type-filter" style="width:100%;background:#0a1a0a;border:1px solid rgba(0,255,65,0.15);border-radius:3px;padding:8px;color:#ccffcc;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;outline:none;">
+          <option value="">ALL TYPES</option>
+          <option value="text">TEXT</option>
+          <option value="image">IMAGES</option>
+          <option value="voice">VOICE</option>
+          <option value="sticker">STICKERS</option>
+          <option value="call_event">CALLS</option>
+        </select>
+        <button id="admin-refresh-btn" style="width:100%;padding:8px;background:rgba(0,255,65,0.06);border:1px solid rgba(0,255,65,0.2);border-radius:3px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:9px;color:#00ff41;letter-spacing:1px;margin-top:4px;">⟳ REFRESH</button>
+      </div>
+      <!-- Right: message log -->
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+        <div style="padding:10px 16px;border-bottom:1px solid rgba(0,255,65,0.08);font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:2px;flex-shrink:0;" id="admin-msg-count">LOADING MESSAGES...</div>
+        <div id="admin-msg-log" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('admin-close-btn').onclick=()=>{ov.remove();};
+  document.getElementById('admin-refresh-btn').onclick=()=>adminLoadMessages();
+  document.getElementById('admin-search').addEventListener('input',()=>adminRenderMessages());
+  document.getElementById('admin-type-filter').addEventListener('change',()=>adminRenderMessages());
+  document.getElementById('admin-export-btn').onclick=adminExportCSV;
+  adminUpdateStats();
+  await adminLoadMessages();
+  /* Auto-refresh every 10s */
+  const refreshIv=setInterval(()=>{
+    if(!document.getElementById('admin-dashboard')){clearInterval(refreshIv);return;}
+    adminLoadMessages();adminUpdateStats();
+  },10000);
+}
+
+let _adminAllMessages = [];
+
+function adminUpdateStats(){
+  const statsEl=document.getElementById('admin-stats');
+  if(!statsEl)return;
+  const onlineCount=users.size;
+  const inCall=callActive?'YES (' + callType?.toUpperCase() + ')':'NO';
+  const msgCount=_adminAllMessages.length;
+  const todayMsgs=_adminAllMessages.filter(m=>{
+    const d=new Date(m.created_at);const now=new Date();
+    return d.toDateString()===now.toDateString();
+  }).length;
+  statsEl.innerHTML=`
+    <div style="background:rgba(0,255,65,0.04);border:1px solid rgba(0,255,65,0.1);border-radius:3px;padding:8px 10px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:1px;">ONLINE</div>
+      <div style="font-size:22px;font-weight:700;color:#00ff41;">${onlineCount}</div>
+    </div>
+    <div style="background:rgba(0,255,65,0.04);border:1px solid rgba(0,255,65,0.1);border-radius:3px;padding:8px 10px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:1px;">TOTAL MSGS</div>
+      <div style="font-size:22px;font-weight:700;color:#00ff41;">${msgCount}</div>
+    </div>
+    <div style="background:rgba(0,255,65,0.04);border:1px solid rgba(0,255,65,0.1);border-radius:3px;padding:8px 10px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:1px;">TODAY</div>
+      <div style="font-size:22px;font-weight:700;color:#00ddff;">${todayMsgs}</div>
+    </div>
+    <div style="background:rgba(0,255,65,0.04);border:1px solid ${callActive?'rgba(255,204,0,0.3)':'rgba(0,255,65,0.1)'};border-radius:3px;padding:8px 10px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#558855;letter-spacing:1px;">ACTIVE CALL</div>
+      <div style="font-size:13px;font-weight:700;color:${callActive?'#ffcc00':'#558855'};font-family:'Orbitron',sans-serif;">${inCall}</div>
+    </div>`;
+  const usersEl=document.getElementById('admin-users-list');
+  if(usersEl){
+    usersEl.innerHTML=[...users.values()].map(u=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 6px;background:rgba(0,255,65,0.03);border-radius:3px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${u.color||'#00ff41'};flex-shrink:0;box-shadow:0 0 4px ${u.color||'#00ff41'};"></div>
+        <span style="font-size:12px;color:#ccffcc;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(u.name||'?')}</span>
+        ${u.inCall?'<span style="font-size:9px;color:#ffcc00;font-family:Orbitron,sans-serif;">CALL</span>':''}
+      </div>`).join('')||'<div style="font-size:11px;color:#558855;font-family:Orbitron,sans-serif;">NONE ONLINE</div>';
+  }
+}
+
+async function adminLoadMessages(){
+  if(!sb)return;
+  const countEl=document.getElementById('admin-msg-count');
+  if(countEl)countEl.textContent='LOADING...';
+  try{
+    const {data,error}=await sb.from(ADMIN_TABLE)
+      .select('*')
+      .order('created_at',{ascending:true})
+      .limit(2000);
+    if(error)throw error;
+    _adminAllMessages=data||[];
+    adminRenderMessages();
+  }catch(e){
+    const countEl=document.getElementById('admin-msg-count');
+    if(countEl)countEl.textContent='ERROR LOADING: '+e.message;
+    console.warn('[GR] Admin load error:',e);
+  }
+}
+
+function adminRenderMessages(){
+  const log=document.getElementById('admin-msg-log');
+  const countEl=document.getElementById('admin-msg-count');
+  if(!log)return;
+  const search=(document.getElementById('admin-search')?.value||'').toLowerCase();
+  const typeFilter=document.getElementById('admin-type-filter')?.value||'';
+  let msgs=_adminAllMessages;
+  if(typeFilter)msgs=msgs.filter(m=>m.msg_type===typeFilter);
+  if(search)msgs=msgs.filter(m=>
+    (m.user_name||'').toLowerCase().includes(search)||
+    (m.content||'').toLowerCase().includes(search)
+  );
+  if(countEl)countEl.textContent=msgs.length+' MESSAGES'+(search||typeFilter?' (FILTERED)':'')+'  —  LAST UPDATED: '+new Date().toLocaleTimeString();
+  log.innerHTML=msgs.map(m=>{
+    const d=new Date(m.created_at);
+    const dateStr=d.toLocaleDateString()+' '+d.toLocaleTimeString();
+    const typeColor={text:'#ccffcc',image:'#00ddff',voice:'#ffcc00',sticker:'#ff6600',call_event:'#9900ff'}[m.msg_type]||'#ccffcc';
+    const typeBadge=`<span style="font-family:'Orbitron',sans-serif;font-size:8px;background:rgba(${m.msg_type==='call_event'?'153,0,255':'0,255,65'},0.08);border:1px solid ${typeColor};border-radius:2px;padding:2px 6px;color:${typeColor};letter-spacing:1px;flex-shrink:0;">${(m.msg_type||'text').toUpperCase()}</span>`;
+    let contentHtml=esc(m.content||'');
+    if(m.msg_type==='image'&&m.img_data){
+      contentHtml=`<img src="${m.img_data}" style="max-width:120px;max-height:80px;border-radius:3px;border:1px solid rgba(0,255,65,0.2);cursor:pointer;object-fit:cover;" onclick="window.open('${m.img_data}')">`;
+    }
+    return `<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;background:rgba(0,255,65,0.02);border:1px solid rgba(0,255,65,0.06);border-radius:4px;min-height:36px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${m.user_color||'#00ff41'};margin-top:5px;flex-shrink:0;box-shadow:0 0 4px ${m.user_color||'#00ff41'};"></div>
+      <div style="min-width:110px;max-width:110px;">
+        <div style="font-weight:700;font-size:12px;color:${m.user_color||'#00ff41'};font-family:'Orbitron',sans-serif;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.user_name||'?')}</div>
+        <div style="font-size:9px;color:#558855;font-family:'Orbitron',sans-serif;margin-top:2px;">${dateStr}</div>
+      </div>
+      ${typeBadge}
+      <div style="flex:1;font-size:13px;color:#ccffcc;line-height:1.5;word-break:break-word;overflow-wrap:anywhere;">${contentHtml}</div>
+    </div>`;
+  }).join('');
+  /* Scroll to bottom */
+  if(!search&&!typeFilter)log.scrollTop=log.scrollHeight;
+}
+
+function adminExportCSV(){
+  if(!_adminAllMessages.length){toast('NO DATA TO EXPORT');return;}
+  const headers=['id','user_name','user_id','msg_type','content','created_at'];
+  const rows=_adminAllMessages.map(m=>[
+    m.msg_id||'',
+    '"'+(m.user_name||'').replace(/"/g,'""')+'"',
+    m.user_id||'',
+    m.msg_type||'',
+    '"'+(m.content||'').replace(/"/g,'""')+'"',
+    m.created_at||''
+  ].join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='galaxy_relay_chat_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(url);
+  toast('CSV EXPORTED');
+}
+
 /* ══ LEAVE ══ */
 async function leave(){
   if(!me)return;isLeavingIntentionally=true;endCall();
@@ -1554,10 +1828,14 @@ document.getElementById('sidebar-overlay').addEventListener('click',closeSB);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('sidebar').classList.contains('open'))closeSB();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&me){clearTimeout(typT);if(isTyping){isTyping=false;bcast('stop_typing',{userId:me.id});}}});
 
+/* Wire admin button on login page immediately */
+document.addEventListener('DOMContentLoaded', setupAdminTrigger);
+if(document.readyState !== 'loading') setupAdminTrigger();
+
 /* CONTINUED IN PART 3 */
  </script>
  <script>
-  /* ════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════
    GALAXY RELAY — PART 3 OF 3
    Contains:
    1. Voice recording
@@ -1746,6 +2024,7 @@ function processAndSendVoice(chunks){
     try{
       addMsg(msg);
       bcast('message',{msg});
+      logMsgToDB(msg);
       alienFx();
     }catch(e){
       console.error('[GR] voice send error:',e);
@@ -1896,6 +2175,7 @@ async function joinCall(type){
   startCallTimer();
   acquireWakeLock();
   bcast('call_join',{from:me.id,fromName:me.name,fromColor:me.color,callType:type});
+  logCallToDB('CALL_JOINED',{userId:me.id,userName:me.name,userColor:me.color,callType:type});
   updateCallSidebar();
 }
 
@@ -2281,6 +2561,7 @@ function endCall(){
   document.getElementById('call-status-txt').textContent='WAITING FOR OTHERS TO JOIN...';
   updateCallUI();renderUsers();
   addSys(`<span style="color:${me?.color}">${esc(me?.name||'OPERATIVE')}</span> ENDED THE CALL`);
+  logCallToDB('CALL_ENDED',{userId:me?.id,userName:me?.name,userColor:me?.color,durationSecs:callSeconds});
 }
 
 /* ══ ACTIVITY TRACKING ══ */
@@ -2334,5 +2615,5 @@ window.addEventListener('pagehide',()=>{
   if(ch){try{ch.untrack();}catch(e){}try{sb.removeChannel(ch);}catch(e){}}
 });
  </script>
-</body>
+ </body>
 </html>
