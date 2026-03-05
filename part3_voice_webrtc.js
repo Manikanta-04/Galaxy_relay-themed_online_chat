@@ -632,14 +632,58 @@ function makeVideoTile(uid,name,color){
 function updateVideoGrid(){
   const layout=document.getElementById('call-video-layout');
   const cnt=layout.children.length;
+  if(cnt===0)return;
+
   const isPortrait=window.matchMedia('(orientation:portrait)').matches;
-  let cols;
-  if(isPortrait){
-    cols='1fr';
+  const isMobile=window.innerWidth<=700;
+
+  let cols, rows;
+
+  if(cnt===1){
+    /* Single participant — full screen */
+    cols=1; rows=1;
+  }else if(cnt===2){
+    if(isPortrait||isMobile){
+      /* Portrait: stack vertically */
+      cols=1; rows=2;
+    }else{
+      /* Landscape: side by side */
+      cols=2; rows=1;
+    }
+  }else if(cnt===3){
+    if(isPortrait||isMobile){
+      /* Portrait: 1 on top, 2 on bottom */
+      cols=2; rows=2;
+    }else{
+      /* Landscape: 2×2 grid (one cell empty) */
+      cols=2; rows=2;
+    }
+  }else if(cnt===4){
+    /* Always 2×2 */
+    cols=2; rows=2;
+  }else if(cnt<=6){
+    if(isPortrait||isMobile){cols=2;rows=3;}
+    else{cols=3;rows=2;}
+  }else if(cnt<=9){
+    cols=3; rows=3;
+  }else if(cnt<=12){
+    cols=4; rows=3;
   }else{
-    cols=cnt<=1?'1fr':cnt<=2?'1fr 1fr':cnt<=4?'1fr 1fr':'repeat(3,1fr)';
+    /* Large calls: square root ceiling */
+    cols=Math.ceil(Math.sqrt(cnt));
+    rows=Math.ceil(cnt/cols);
   }
-  layout.style.gridTemplateColumns=cols;
+
+  layout.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  layout.style.gridTemplateRows=`repeat(${rows},1fr)`;
+
+  /* Ensure every tile fills its cell equally */
+  Array.from(layout.children).forEach(tile=>{
+    tile.style.width='100%';
+    tile.style.height='100%';
+    tile.style.minHeight='0';
+    tile.style.aspectRatio='unset';
+  });
 }
 
 function onCallRemoteLeave(uid){
@@ -794,6 +838,8 @@ document.addEventListener('visibilitychange',async()=>{
 /* Re-layout video grid on orientation change */
 window.addEventListener('orientationchange',()=>{setTimeout(()=>{if(callActive&&callType==='video')updateVideoGrid();},300);});
 window.matchMedia('(orientation:portrait)').addEventListener('change',()=>{if(callActive&&callType==='video')updateVideoGrid();});
+/* Also recalculate on window resize (desktop drag-resize, split-screen) */
+window.addEventListener('resize',()=>{if(callActive&&callType==='video')updateVideoGrid();});
 
 /* pagehide fires on Android back-gesture / tab close where beforeunload may not. */
 window.addEventListener('pagehide',()=>{

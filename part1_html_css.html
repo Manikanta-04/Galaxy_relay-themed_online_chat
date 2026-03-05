@@ -255,8 +255,24 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 .call-p-name{font-size:10px;font-family:'Orbitron',sans-serif;color:var(--text-dim);letter-spacing:1px;text-align:center;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .call-timer-big{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:var(--omni);letter-spacing:4px;}
 .call-status-txt{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--text-dim);letter-spacing:2px;text-align:center;}
-.call-video-layout{flex:1;min-height:0;display:grid;padding:12px;gap:8px;overflow:hidden;align-content:start;}
-.video-tile{position:relative;background:#0a1a0a;border-radius:8px;overflow:hidden;border:1px solid rgba(0,255,65,0.1);min-height:120px;aspect-ratio:16/9;}
+.call-video-layout{
+  flex:1;min-height:0;width:100%;
+  display:grid;
+  padding:8px;gap:6px;
+  overflow:hidden;
+  /* rows stretch to fill height equally — no aspect-ratio forcing unequal sizes */
+  align-content:stretch;
+  justify-content:stretch;
+  /* smooth tile rearrangement */
+  transition:grid-template-columns 0.35s ease,grid-template-rows 0.35s ease;
+}
+.video-tile{
+  position:relative;background:#0a1a0a;border-radius:8px;overflow:hidden;
+  border:1px solid rgba(0,255,65,0.1);
+  /* fill the grid cell completely — no fixed aspect-ratio override */
+  width:100%;height:100%;min-height:0;min-width:0;
+  transition:border-color 0.2s,box-shadow 0.2s,transform 0.35s ease;
+}
 .video-tile video{width:100%;height:100%;object-fit:cover;display:block;}
 .video-tile.local-tile video{transform:scaleX(-1);}
 .video-tile.speaking{border-color:var(--omni);box-shadow:0 0 12px rgba(0,255,65,0.3);}
@@ -384,7 +400,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   .call-video-layout{overflow-y:auto;}
 }
 @media(max-width:700px) and (orientation:portrait){
-  .video-tile{aspect-ratio:4/3;}
+  /* video tiles fill their grid cells — no aspect-ratio override needed */
+  .call-video-layout{padding:4px;gap:4px;}
 }
 @media(max-width:380px){
   .join-card{padding:24px 16px;}
@@ -607,7 +624,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   </div>
 </div>
 <!-- END OF PART 1 -->
-    <script src="part2_core_js.js"></script>
+     <script src="part2_core_js.js"></script>
     <script src="part3_voice_webrtc.js"></script>
 </body>
 </html>
