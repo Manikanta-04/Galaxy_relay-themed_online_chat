@@ -8,7 +8,7 @@ const CHANNEL_NAME      = 'galaxy_relay_main';
    DB logging saves every message to Supabase so admin can see history.
    Set ADMIN_LOG_ENABLED=true only after you run the SQL setup in Supabase.
 ═══════════════════════════════════════════════════════════════════════ */
-const ADMIN_PASSWORD    = 'GALAXYADMIN2025';   /* ← CHANGE THIS */
+const ADMIN_PASSWORD    = 'Manikanta@143';   /* ← CHANGE THIS */
 const ADMIN_LOG_ENABLED = true;                /* ← set false if table not created yet */
 const ADMIN_TABLE       = 'gr_messages';
 const MAX_IMG_BYTES     = 200 * 1024;
