@@ -1,6 +1,9 @@
 /* ══ CONFIG ══ */
 const SUPABASE_URL      = 'https://mfzgxqslnykeqfjpnrbn.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1memd4cXNsbnlrZXFmanBucmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDIxMTksImV4cCI6MjA4Nzc3ODExOX0.ID0C7loFSzQ7WsRHUU7x8TpYv8gwh04oenKz5lfeVTI';
+const SUPABASE_ANON_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1memd4cXNsbnlrZXFmanBucmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDIxMTksImV4cCI6MjA4Nzc3ODExOX0.ID0C7loFSzQ7WsRHUU7x8TpYv8gwh04oenKz5lfeVTI';
+/* Service role key — used ONLY for admin dashboard SELECT (bypasses RLS).
+   Regular chat uses SUPABASE_ANON_KEY above. */
+const SUPABASE_SERVICE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1memd4cXNsbnlrZXFmanBucmJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjIwMjExOSwiZXhwIjoyMDg3Nzc4MTE5fQ.do7MA6HNZYp-pGKCALR73Yh6uXQraDn1UPXt7AbJAkc';
 const CHANNEL_NAME      = 'galaxy_relay_main';
 
 /* ══ ADMIN CONFIG ══
@@ -8,7 +11,7 @@ const CHANNEL_NAME      = 'galaxy_relay_main';
    DB logging saves every message to Supabase so admin can see history.
    Set ADMIN_LOG_ENABLED=true only after you run the SQL setup in Supabase.
 ═══════════════════════════════════════════════════════════════════════ */
-const ADMIN_PASSWORD    = 'Manikanta@143';   /* ← CHANGE THIS */
+const ADMIN_PASSWORD    = 'GALAXYADMIN2025';   /* ← CHANGE THIS */
 const ADMIN_LOG_ENABLED = true;                /* ← set false if table not created yet */
 const ADMIN_TABLE       = 'gr_messages';
 const MAX_IMG_BYTES     = 200 * 1024;
@@ -42,7 +45,7 @@ const avColors = {
 const avst = c => avColors[c] || avColors['#00ff41'];
 
 /* ══ STATE ══ */
-let sb = null, ch = null, me = null;
+let sb = null, sbAdmin = null, ch = null, me = null;
 let users = new Map(), messages = [], typingUsers = new Map();
 let profanityOn = true, userColor = '#00ff41';
 let lastUid = null, lastType = null, lastMsgTs = 0;
@@ -369,6 +372,7 @@ async function initSB(){
   setStatus('wait','CONNECTING...');
   try{
     sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    sbAdmin=window.supabase.createClient(SUPABASE_URL,SUPABASE_SERVICE_KEY);
     await new Promise((res,rej)=>{
       const pn='__ping__'+Date.now(),t=sb.channel(pn);
       const to=setTimeout(()=>{try{sb.removeChannel(t);}catch(e){}rej(new Error('timeout'));},9000);
@@ -1302,7 +1306,7 @@ async function adminLoadMessages(){
   const countEl=document.getElementById('admin-msg-count');
   if(countEl)countEl.textContent='LOADING...';
   try{
-    const {data,error}=await sb.from(ADMIN_TABLE)
+    const {data,error}=await sbAdmin.from(ADMIN_TABLE)
       .select('*')
       .order('created_at',{ascending:true})
       .limit(2000);
