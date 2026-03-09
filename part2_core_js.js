@@ -32,7 +32,7 @@ const EMOJIS    = ['😀','😂','😍','🤔','😎','🥺','😭','🔥','❤�
 const STICKERS  = ['🤖','👾','🛸','🌌','⭐','💫','🌠','🔮','🌀','⚡','💥','🌟','✨','🎯','🏆','🦸','🦹','🧙','🐉','🌈'];
 const PROFANITY = ['fuck','shit','damn','ass','bitch','crap'];
 const ALIEN_FX  = ['HEATBLAST ACTIVATED','GOING XLR8','DIAMONDHEAD ONLINE','GHOSTFREAK MODE','FOUR ARMS ENABLED','CANNONBOLT ROLLING','SWAMPFIRE IGNITED','ECHO ECHO ONLINE','ALIEN X UNLOCKED'];
-const REACT_EMOJIS = ['👍','❤️','😂','😮','😢','🔥','🎉','✨','👏','💯','🙌','🤔'];
+const REACT_EMOJIS = ['👍','❤️','😂','😮','😢','🔥','🎉','✨','👏','💯','🙌','🤔','👽'];
 
 const avColors = {
   '#00ff41':'background:linear-gradient(135deg,#00ff41,#006622);color:#003311;',
