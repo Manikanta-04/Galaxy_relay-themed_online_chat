@@ -4,7 +4,7 @@ const SUPABASE_ANON_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJz
 /* Service role key — used ONLY for admin dashboard SELECT (bypasses RLS).
    Regular chat uses SUPABASE_ANON_KEY above. */
 const SUPABASE_SERVICE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1memd4cXNsbnlrZXFmanBucmJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjIwMjExOSwiZXhwIjoyMDg3Nzc4MTE5fQ.do7MA6HNZYp-pGKCALR73Yh6uXQraDn1UPXt7AbJAkc';
-const CHANNEL_NAME      = 'galaxy_relay_main';
+const CHANNEL_NAME      = 'Galaxy_Relay_Main';
 
 /* ══ ADMIN CONFIG ══
    ADMIN_PASSWORD : the secret password you set — change this!
@@ -30,7 +30,7 @@ const AUDIO_DATA_RE = /^data:audio\//;
 
 const EMOJIS    = ['😀','😂','😍','🤔','😎','🥺','😭','🔥','❤️','👍','👋','🎉','✨','🙌','💯','🤩','😅','🤣','😊','🥳','💪','🚀','⭐','🌟','💡','🎯','🤝','👀','💬','🌈','💜','🩵','🫡','🥹','😤','🫶','🙏','👊','✌️','🤟','🤙','💥','🌀','⚡','🛸','👽','🌌'];
 const STICKERS  = ['🤖','👾','🛸','🌌','⭐','💫','🌠','🔮','🌀','⚡','💥','🌟','✨','🎯','🏆','🦸','🦹','🧙','🐉','🌈'];
-const PROFANITY = ['fuck','shit','damn','ass','bitch','crap'];
+const PROFANITY = ['fuck','shit','damn','ass','bitch','crap','Damn', 'hell', 'ass', 'crap', 'bastard', 'bloody', 'Shit', 'bitch', 'piss', 'dick', 'cock', 'pussy', 'tits', 'balls'];
 const ALIEN_FX  = ['HEATBLAST ACTIVATED','GOING XLR8','DIAMONDHEAD ONLINE','GHOSTFREAK MODE','FOUR ARMS ENABLED','CANNONBOLT ROLLING','SWAMPFIRE IGNITED','ECHO ECHO ONLINE','ALIEN X UNLOCKED'];
 const REACT_EMOJIS = ['👍','❤️','😂','😮','😢','🔥','🎉','✨','👏','💯','🙌','🤔','👽'];
 
