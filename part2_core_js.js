@@ -29,8 +29,44 @@ const AUDIO_DATA_RE = /^data:audio\//;
 
 const EMOJIS    = ['😀','😂','😍','🤔','😎','🥺','😭','🔥','❤️','👍','👋','🎉','✨','🙌','💯','🤩','😅','🤣','😊','🥳','💪','🚀','⭐','🌟','💡','🎯','🤝','👀','💬','🌈','💜','🩵','🫡','🥹','😤','🫶','🙏','👊','✌️','🤟','🤙','💥','🌀','⚡','🛸','👽','🌌'];
 const STICKERS  = ['🤖','👾','🛸','🌌','⭐','💫','🌠','🔮','🌀','⚡','💥','🌟','✨','🎯','🏆','🦸','🦹','🧙','🐉','🌈'];
-const PROFANITY = ['fuck','shit','damn','ass','bitch','crap','Damn', 'hell', 'ass', 'crap', 'bastard', 'bloody', 'Shit', 'bitch', 'piss', 'dick', 'cock', 'pussy', 'tits', 'balls', 'shit', 'asshole', 'bullshit', 'dickhead', 'shithead', 'wanker', 'twat', 'prick', 'slut', 'whore', 'skank', 'douchebag', 'jackass', 'dipshit', 'numbnuts', 'clusterfuck', 'horseshit', 'shitstorm', 'fuck', 'cunt', 'motherfucker', 'fucked', 'fucker', 'fucking', 'fuckhead', 'fuckface', 'cocksucker', 'son of a bitch', 'piece of shit', 'eat shit', 'go to hell', 'fuck off', 'fuck you','crackhead', 'junkie', 'druggie', 'pothead', 'stoner', 'tweaker', 'meth', 'heroin', 'cocaine', 'crack', 'weed', 'dope', 'smack', 'junk', 'blow', 'snow', 'ice', 'speed', 'molly', 'ecstasy', 'acid', 'shrooms', 'dealer', 'pusher', 'pimp', 'hooker', 'prostitute', 'whore', 'slut', 'escort', 'streetwalker', 'call girl', 'john', 'trick', 'gang', 'gangster', 'thug', 'hoodlum', 'criminal', 'felon', 'convict', 'inmate', 'prisoner','idiot', 'moron', 'imbecile', 'retard', 'retarded', 'stupid', 'dumb', 'dumbass', 'dumbfuck', 'dummy', 'dimwit', 'halfwit', 'nitwit', 'numbskull', 'bonehead', 'blockhead', 'meathead', 'airhead', 'fathead', 'pinhead', 'knucklehead', 'butthead', 'shithead', 'dickhead', 'fuckhead', 'asshead', 'crackhead', 'deadhead', 'pothead', 'baldhead', 'baldass', 'fatass', 'dumbass', 'jackass', 'smartass', 'wiseass', 'badass', 'hardass', 'kickass', 'lardass', 'tightass', 'coldass', 'chickenshit', 'dipshit', 'apeshit', 'batshit', 'bullshit', 'horseshit', 'dogshit', '
-pigshit', 'ratshit',('craphead'), ('turdhead'), ('poophead'), ('jerk'), ('jerkoff'), ('jerkface'), ('prick'), ('prickface'), ('dick'), ('dickface'), ('dickweed'), ('dickwad'), ('dickwit'), ('cock'), ('cockhead'), ('cockface'), ('cockwit'), ('cockwad'), ('pussy'), ('pussyface'), ('twat'), ('twatface'), ('cunt'), ('cuntface'), ('bitch'), ('bitchface'), ('bastard'), ('bastardface'), ('son of a bitch'), ('motherfucker'), ('cocksucker'), ('asslicker'), ('asswipe'), ('assclown'), ('asshat'), ('assface'), ('assbag'), ('assbandit'), ('loser'), ('failure'), ('worthless'), ('pathetic'), ('useless'), ('scumbag'), ('scum'), ('\filth"), ('\trash"), ('\garbage"), ('\waste"), ('\reject"), ('\freak"), ('\creep"), ('\pervert"), ('\deviant"), ('\degenerate")
+const PROFANITY = [
+  "fuck","shit","damn","ass","bitch","crap","hell","bastard","bloody",
+  "piss","dick","cock","pussy","tits","balls","asshole","bullshit",
+  "dickhead","shithead","wanker","twat","prick","slut","whore","skank",
+  "douchebag","jackass","dipshit","numbnuts","clusterfuck","horseshit",
+  "shitstorm","cunt","motherfucker","fucked","fucker","fucking",
+  "fuckhead","fuckface","cocksucker","son of a bitch","piece of shit",
+  "eat shit","go to hell","fuck off","fuck you",
+
+  "crackhead","junkie","druggie","pothead","stoner","tweaker","meth",
+  "heroin","cocaine","crack","weed","dope","smack","junk","blow",
+  "snow","ice","speed","molly","ecstasy","acid","shrooms","dealer",
+  "pusher","pimp","hooker","prostitute","escort","streetwalker",
+  "call girl","john","trick",
+
+  "gang","gangster","thug","hoodlum","criminal","felon","convict",
+  "inmate","prisoner",
+
+  "idiot","moron","imbecile","stupid","dumb","dumbass","dummy",
+  "dimwit","halfwit","nitwit","numbskull","bonehead","blockhead",
+  "meathead","airhead","fathead","pinhead","knucklehead","butthead",
+
+  "asshead","baldass","fatass","smartass","wiseass","badass",
+  "hardass","kickass","lardass","tightass","coldass",
+
+  "chickenshit","apeshit","batshit","dogshit","pigshit","ratshit",
+
+  "craphead","turdhead","poophead","jerk","jerkoff","jerkface",
+  "prickface","dickface","dickweed","dickwad","dickwit",
+  "cockhead","cockface","cockwit","cockwad","pussyface",
+  "twatface","cuntface","bitchface","bastardface",
+
+  "asslicker","asswipe","assclown","asshat","assface","assbag",
+  "assbandit",
+
+  "loser","failure","worthless","pathetic","useless",
+  "scumbag","scum","filth","trash","garbage","waste",
+  "reject","freak","creep","pervert","deviant","degenerate"
 ];
 const ALIEN_FX  = ['HEATBLAST ACTIVATED','GOING XLR8','DIAMONDHEAD ONLINE','GHOSTFREAK MODE','FOUR ARMS ENABLED','CANNONBOLT ROLLING','SWAMPFIRE IGNITED','ECHO ECHO ONLINE','ALIEN X UNLOCKED'];
 const REACT_EMOJIS = ['👍','❤️','😂','😮','😢','🔥','🎉','✨','👏','💯','🙌','🤔','👽'];
