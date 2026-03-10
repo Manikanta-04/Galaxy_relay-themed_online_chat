@@ -64,7 +64,7 @@ const PROFANITY = [
   "asslicker","asswipe","assclown","asshat","assface","assbag",
   "assbandit",
 
-  "loser","failure","worthless","pathetic","useless",
+  "loser","worthless","pathetic","useless",
   "scumbag","scum","filth","trash","garbage","waste",
   "reject","freak","creep","pervert","deviant","degenerate"
 ];
