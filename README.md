@@ -31,15 +31,11 @@
 > 💡 No login required — just enter a callsign and start chatting instantly across any device or browser.
 
 ---
-
 ## 🎥 Demo Video
 
-> 📽️ *(Add a Loom / YouTube demo walkthrough here)*
->
-> [![Watch Demo](https://img.shields.io/badge/▶%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube)](https://youtube.com)
+[![Watch Demo](https://img.shields.io/badge/▶%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=5DgUMIZn6W0)
 
 ---
-
 ## 🧠 Problem Statement
 
 Most real-time chat apps are either:
