@@ -133,6 +133,15 @@ let lbStore = new Map();
 let rateLimitActive = false, msgTimestamps = [];
 let joinedChat = false, isLeavingIntentionally = false;
 
+/* ══ ROOM STATE ══ */
+let currentRoom = 'global';          /* 'global' | 'private' */
+let currentRoomCode = null;          /* null for global, 6-char code for private */
+let pendingRoomCode = null;          /* the code user wants to join */
+let roomSelectionDone = false;       /* prevents double-entry */
+const GLOBAL_CHANNEL = 'Galaxy_Relay_Main';
+function getRoomChannelName(code){ return 'Galaxy_Relay_Private_' + String(code).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6); }
+function genRoomCode(){ return Math.random().toString(36).slice(2,8).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6).padEnd(6,'X'); }
+
 /* ══ VOICE STATE ══ */
 let mediaRecorder = null, audioChunks = [], recStream = null;
 let recStartTime = 0, recTimerIv = null, isRecording = false;
@@ -469,10 +478,117 @@ async function initSB(){
 }
 initSB();
 
-/* ══ JOIN ══ */
+/* ══ JOIN SCREEN EVENTS ══ */
 document.getElementById('btn-join').addEventListener('click',doJoin);
 document.getElementById('inp-name').addEventListener('keypress',e=>{if(e.key==='Enter')doJoin();});
 document.getElementById('inp-status').addEventListener('keypress',e=>{if(e.key==='Enter')doJoin();});
+
+/* ══ ROOM SELECTION EVENTS ══ */
+(function setupRoomSelection(){
+  /* Global chat button */
+  const globalBtn=document.getElementById('btn-join-global');
+  globalBtn.addEventListener('click',enterGlobalChat);
+  globalBtn.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();enterGlobalChat();}});
+
+  /* Private room button → show private room panel */
+  const privateBtn=document.getElementById('btn-join-private');
+  privateBtn.addEventListener('click',()=>showPrivatePanel());
+  privateBtn.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();showPrivatePanel();}});
+
+  /* Back to join screen */
+  document.getElementById('rs-back-btn').addEventListener('click',()=>{
+    if(roomSelectionDone)return;
+    me=null;
+    const rss=document.getElementById('room-select-screen');rss.classList.add('exit');
+    setTimeout(()=>{rss.classList.remove('show');rss.classList.remove('exit');},400);
+    const js=document.getElementById('join-screen');js.classList.remove('exit');
+    document.getElementById('btn-join').disabled=false;
+    document.getElementById('inp-name').focus();
+  });
+
+  /* Private room panel tabs */
+  document.querySelectorAll('.prp-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.prp-tab').forEach(t=>{t.classList.remove('active');});
+      document.querySelectorAll('.prp-panel').forEach(p=>{p.classList.remove('active');});
+      tab.classList.add('active');
+      document.getElementById('prp-panel-'+tab.dataset.prpTab).classList.add('active');
+      if(tab.dataset.prpTab==='join')setTimeout(()=>document.getElementById('prp-join-input').focus(),100);
+    });
+  });
+
+  /* Generate code */
+  document.getElementById('prp-generate-btn').addEventListener('click',()=>{
+    const code=genRoomCode();
+    document.getElementById('prp-code-value').textContent=code;
+    document.getElementById('prp-code-wrap').classList.add('show');
+    document.getElementById('prp-generate-btn').textContent='⟳ REGENERATE CODE';
+    document.getElementById('prp-enter-own-btn').dataset.code=code;
+  });
+
+  /* Copy room code */
+  document.getElementById('prp-copy-btn').addEventListener('click',()=>{
+    const code=document.getElementById('prp-code-value').textContent;
+    const btn=document.getElementById('prp-copy-btn');
+    navigator.clipboard?.writeText(code).then(()=>{
+      btn.textContent='✓ COPIED!';setTimeout(()=>btn.textContent='📋 COPY',2000);
+    }).catch(()=>{toast('ROOM CODE: '+code);});
+  });
+
+  /* Enter own created room */
+  document.getElementById('prp-enter-own-btn').addEventListener('click',function(){
+    const code=this.dataset.code||document.getElementById('prp-code-value').textContent;
+    if(!code||code==='------'){toast('GENERATE A CODE FIRST');return;}
+    enterPrivateChat(code);
+  });
+
+  /* Join input */
+  const joinInput=document.getElementById('prp-join-input');
+  const joinSubmit=document.getElementById('prp-join-submit-btn');
+  const joinErr=document.getElementById('prp-join-err');
+  joinInput.addEventListener('input',()=>{
+    const v=joinInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+    joinInput.value=v;
+    joinSubmit.disabled=v.length<3;
+    joinErr.textContent='';
+  });
+  joinInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!joinSubmit.disabled)doJoinPrivate();});
+  joinSubmit.addEventListener('click',doJoinPrivate);
+
+  function doJoinPrivate(){
+    const code=document.getElementById('prp-join-input').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+    if(code.length<3){document.getElementById('prp-join-err').textContent='CODE TOO SHORT — MIN 3 CHARACTERS';return;}
+    enterPrivateChat(code);
+  }
+
+  /* Back from private panel */
+  document.getElementById('prp-back-btn').addEventListener('click',()=>{
+    if(roomSelectionDone)return;
+    hidePrivatePanel();
+  });
+})();
+
+function showPrivatePanel(){
+  /* Reset state */
+  document.getElementById('prp-code-wrap').classList.remove('show');
+  document.getElementById('prp-generate-btn').textContent='⬡ GENERATE ROOM CODE ⬡';
+  document.getElementById('prp-code-value').textContent='------';
+  document.getElementById('prp-join-input').value='';
+  document.getElementById('prp-join-err').textContent='';
+  document.getElementById('prp-join-submit-btn').disabled=true;
+  /* Switch to create tab */
+  document.querySelectorAll('.prp-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.prp-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('prp-tab-create').classList.add('active');
+  document.getElementById('prp-panel-create').classList.add('active');
+  document.getElementById('private-room-panel').classList.add('show');
+  setTimeout(()=>document.getElementById('prp-generate-btn').focus(),200);
+}
+
+function hidePrivatePanel(){
+  const prp=document.getElementById('private-room-panel');
+  prp.classList.add('exit');setTimeout(()=>{prp.classList.remove('show');prp.classList.remove('exit');},380);
+}
 
 function doJoin(){
   if(joinedChat)return;
@@ -485,15 +601,59 @@ function doJoin(){
   }
   errEl.classList.remove('show');
   if(!sb){toast('NOT CONNECTED — WAIT OR RELOAD');return;}
-  joinedChat=true;
-  document.getElementById('btn-join').disabled=true;
   const status=document.getElementById('inp-status').value.trim().replace(/[<>"\\]/g,'').slice(0,60);
   me={id:genId(),name,color:safeColor(userColor),status,joinedAt:Date.now()};
+  /* Show room selection instead of jumping straight to chat */
   document.getElementById('join-screen').classList.add('exit');
+  document.getElementById('rs-callsign-display').textContent=name.toUpperCase();
+  const rss=document.getElementById('room-select-screen');
+  rss.classList.add('show');
+  setTimeout(()=>rss.querySelector('#btn-join-global')?.focus(),300);
+}
+
+function enterGlobalChat(){
+  if(roomSelectionDone)return;
+  roomSelectionDone=true;
+  currentRoom='global';currentRoomCode=null;
+  _launchChat();
+}
+
+function enterPrivateChat(code){
+  if(roomSelectionDone)return;
+  roomSelectionDone=true;
+  currentRoom='private';currentRoomCode=String(code).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+  _launchChat();
+}
+
+function _launchChat(){
+  joinedChat=true;
+  const rss=document.getElementById('room-select-screen');
+  const prp=document.getElementById('private-room-panel');
+  rss.classList.add('exit');prp.classList.add('exit');
+  setTimeout(()=>{rss.classList.remove('show');prp.classList.remove('show');},520);
   const cr=document.getElementById('chatroom');cr.style.display='flex';
   setTimeout(()=>cr.classList.add('visible'),10);
+  updateRoomBadge();
   setupChannel();
   setTimeout(()=>document.getElementById('msg-input').focus(),600);
+}
+
+function updateRoomBadge(){
+  const badge=document.getElementById('room-badge');
+  if(!badge)return;
+  if(currentRoom==='private'&&currentRoomCode){
+    badge.className='room-badge private';
+    badge.textContent='🔒 '+currentRoomCode;
+    badge.title='Private room: '+currentRoomCode+' — Click to copy code';
+    badge.onclick=()=>{
+      navigator.clipboard?.writeText(currentRoomCode).then(()=>toast('ROOM CODE COPIED: '+currentRoomCode)).catch(()=>toast('ROOM CODE: '+currentRoomCode));
+    };
+  }else{
+    badge.className='room-badge global';
+    badge.textContent='🌐 GLOBAL';
+    badge.title='Global public channel';
+    badge.onclick=null;
+  }
 }
 
 /* ══ PRESENCE ══ */
@@ -519,7 +679,10 @@ function forceRebuildUsers(){
 
 function setupChannel(){
   if(ch){try{sb.removeChannel(ch);}catch(e){}ch=null;}
-  ch = sb.channel(CHANNEL_NAME, {
+  const channelName = currentRoom==='private'&&currentRoomCode
+    ? getRoomChannelName(currentRoomCode)
+    : GLOBAL_CHANNEL;
+  ch = sb.channel(channelName, {
     config:{
       presence:{key: me.id},
       broadcast:{self: false}
@@ -578,7 +741,10 @@ function setupChannel(){
       forceRebuildUsers();
       setTimeout(()=>forceRebuildUsers(), 500);
       setTimeout(()=>forceRebuildUsers(), 2000);
-      addSys(`OPERATIVE <span style="color:${me.color}">${esc(me.name)}</span> CONNECTED TO GALAXY RELAY`);
+      const roomDesc = currentRoom==='private'&&currentRoomCode
+        ? `PRIVATE ROOM <span style="color:var(--omni);font-family:'Orbitron',sans-serif;letter-spacing:2px;">${esc(currentRoomCode)}</span>`
+        : 'GALAXY RELAY';
+      addSys(`OPERATIVE <span style="color:${me.color}">${esc(me.name)}</span> CONNECTED TO ${roomDesc}`);
     }else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(s)){
       setLive('offline');
       if(!isLeavingIntentionally)document.getElementById('reconnect-banner').classList.add('show');
@@ -674,8 +840,9 @@ function makeUserEl(u){
 }
 function updateSub(){
   const c = users.size;
+  const roomLabel = currentRoom==='private'&&currentRoomCode ? `🔒 ROOM: ${currentRoomCode}` : '🌐 GLOBAL RELAY';
   document.getElementById('chat-sub').textContent =
-    `${c} OPERATIVE${c!==1?'S':''} ONLINE`+
+    `${c} OPERATIVE${c!==1?'S':''} ONLINE · ${roomLabel}`+
     (callActive?` · ${callType?.toUpperCase()} CALL ACTIVE`:'');
 }
 function bump(){

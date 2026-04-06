@@ -85,6 +85,88 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 .online-hint{text-align:center;margin-top:14px;font-size:10px;color:var(--text-dim);font-family:'Orbitron',sans-serif;letter-spacing:1px;}
 .online-hint span{color:var(--omni);font-weight:700;}
 
+/* ROOM SELECTION SCREEN */
+#room-select-screen{position:fixed;inset:0;z-index:190;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#061206 0%,#020602 100%);padding-top:var(--sat);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#room-select-screen.show{display:flex;}
+#room-select-screen.exit{opacity:0;transform:scale(1.05) translateY(-16px);transition:all 0.5s cubic-bezier(0.4,0,0.2,1);pointer-events:none;}
+.room-select-card{background:linear-gradient(145deg,rgba(10,26,10,0.99),rgba(5,12,5,0.99));border:1px solid rgba(0,255,65,0.25);border-radius:6px;padding:36px 32px;width:100%;max-width:480px;box-shadow:0 0 80px rgba(0,255,65,0.07),inset 0 1px 0 rgba(0,255,65,0.1);position:relative;overflow:hidden;margin:16px;animation:cardFloat 5s ease-in-out infinite;}
+.room-select-card::before,.room-select-card::after{content:'';position:absolute;width:22px;height:22px;border-color:var(--omni);border-style:solid;opacity:0.5;}
+.room-select-card::before{top:10px;left:10px;border-width:2px 0 0 2px;}
+.room-select-card::after{bottom:10px;right:10px;border-width:0 2px 2px 0;}
+.rs-header{text-align:center;margin-bottom:28px;}
+.rs-welcome{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--text-dim);letter-spacing:3px;margin-bottom:6px;}
+.rs-callsign{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,var(--omni),#88ff88,var(--alien-ice));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 3s linear infinite;margin-bottom:4px;}
+.rs-subtitle{font-size:11px;color:var(--text-dim);letter-spacing:2px;font-family:'Orbitron',sans-serif;}
+.rs-divider{display:flex;align-items:center;gap:12px;margin:20px 0;}
+.rs-divider::before,.rs-divider::after{content:'';flex:1;height:1px;background:rgba(0,255,65,0.12);}
+.rs-divider-txt{font-family:'Orbitron',sans-serif;font-size:9px;color:var(--text-dim);letter-spacing:2px;}
+.room-option{display:flex;align-items:flex-start;gap:14px;padding:18px 16px;background:rgba(0,255,65,0.03);border:1px solid rgba(0,255,65,0.12);border-radius:4px;cursor:pointer;transition:all 0.25s;margin-bottom:10px;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.room-option::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,255,65,0.04),transparent);transform:translateX(-100%);transition:transform 0.5s;}
+.room-option:hover{border-color:rgba(0,255,65,0.3);background:rgba(0,255,65,0.06);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,255,65,0.1);}
+.room-option:hover::before{transform:translateX(100%);}
+.room-option:active{transform:scale(0.98);}
+.room-option.video-opt{border-color:rgba(0,221,255,0.12);background:rgba(0,221,255,0.02);}
+.room-option.video-opt:hover{border-color:rgba(0,221,255,0.3);background:rgba(0,221,255,0.06);box-shadow:0 4px 20px rgba(0,221,255,0.1);}
+.room-opt-icon{font-size:28px;flex-shrink:0;margin-top:2px;filter:drop-shadow(0 0 8px rgba(0,255,65,0.4));}
+.room-option.video-opt .room-opt-icon{filter:drop-shadow(0 0 8px rgba(0,221,255,0.4));}
+.room-opt-body{flex:1;min-width:0;}
+.room-opt-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;color:var(--omni);letter-spacing:2px;margin-bottom:4px;}
+.room-option.video-opt .room-opt-title{color:var(--alien-ice);}
+.room-opt-desc{font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:8px;}
+.room-opt-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.room-opt-tag{font-size:9px;font-family:'Orbitron',sans-serif;letter-spacing:1px;padding:2px 7px;border-radius:2px;color:var(--omni);background:rgba(0,255,65,0.08);border:1px solid rgba(0,255,65,0.18);}
+.room-option.video-opt .room-opt-tag{color:var(--alien-ice);background:rgba(0,221,255,0.08);border-color:rgba(0,221,255,0.18);}
+.room-opt-arrow{font-size:16px;color:var(--omni);opacity:0.5;flex-shrink:0;margin-top:8px;transition:all 0.2s;}
+.room-option:hover .room-opt-arrow{opacity:1;transform:translateX(4px);}
+.room-option.video-opt .room-opt-arrow{color:var(--alien-ice);}
+.rs-back-btn{display:block;margin:16px auto 0;background:none;border:none;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:9px;color:rgba(0,255,65,0.25);letter-spacing:2px;padding:6px 14px;transition:all 0.3s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.rs-back-btn:hover{color:rgba(0,255,65,0.6);}
+
+/* PRIVATE ROOM PANEL */
+#private-room-panel{position:fixed;inset:0;z-index:195;display:none;align-items:center;justify-content:center;background:rgba(2,6,2,0.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding-top:var(--sat);overflow-y:auto;}
+#private-room-panel.show{display:flex;}
+#private-room-panel.exit{opacity:0;transform:scale(0.96);transition:all 0.4s ease;pointer-events:none;}
+.prp-card{background:linear-gradient(145deg,rgba(10,26,10,0.99),rgba(5,12,5,0.99));border:1px solid rgba(0,255,65,0.25);border-radius:6px;padding:32px 28px;width:100%;max-width:420px;margin:16px;position:relative;}
+.prp-card::before,.prp-card::after{content:'';position:absolute;width:18px;height:18px;border-color:var(--omni);border-style:solid;opacity:0.5;}
+.prp-card::before{top:8px;left:8px;border-width:2px 0 0 2px;}
+.prp-card::after{bottom:8px;right:8px;border-width:0 2px 2px 0;}
+.prp-title{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;color:var(--omni);letter-spacing:3px;text-align:center;margin-bottom:4px;}
+.prp-sub{font-size:10px;color:var(--text-dim);font-family:'Orbitron',sans-serif;letter-spacing:2px;text-align:center;margin-bottom:24px;}
+.prp-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid rgba(0,255,65,0.15);border-radius:3px;overflow:hidden;}
+.prp-tab{flex:1;padding:10px 8px;background:none;border:none;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;color:var(--text-dim);letter-spacing:1.5px;transition:all 0.2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.prp-tab.active{background:rgba(0,255,65,0.1);color:var(--omni);border-bottom:2px solid var(--omni);}
+.prp-tab:hover:not(.active){background:rgba(0,255,65,0.04);color:var(--text);}
+.prp-panel{display:none;}
+.prp-panel.active{display:block;}
+/* Create room panel */
+.prp-create-btn{width:100%;padding:14px;background:linear-gradient(135deg,#003311,#005522);border:1px solid var(--omni);border-radius:3px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:var(--omni);letter-spacing:3px;transition:all 0.3s;margin-bottom:14px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.prp-create-btn:hover{box-shadow:0 0 30px rgba(0,255,65,0.2);transform:translateY(-1px);}
+.prp-create-btn:active{transform:scale(0.97);}
+.prp-room-code-wrap{display:none;flex-direction:column;gap:10px;}
+.prp-room-code-wrap.show{display:flex;}
+.prp-code-label{font-family:'Orbitron',sans-serif;font-size:9px;color:var(--text-dim);letter-spacing:2px;}
+.prp-code-display{display:flex;align-items:center;gap:8px;background:rgba(0,255,65,0.05);border:1px solid rgba(0,255,65,0.3);border-radius:3px;padding:12px 14px;}
+.prp-code-value{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:var(--omni);letter-spacing:6px;flex:1;text-align:center;}
+.prp-copy-btn{background:rgba(0,255,65,0.08);border:1px solid rgba(0,255,65,0.2);border-radius:2px;padding:6px 10px;color:var(--omni);font-family:'Orbitron',sans-serif;font-size:9px;cursor:pointer;white-space:nowrap;transition:all 0.2s;touch-action:manipulation;}
+.prp-copy-btn:hover{background:rgba(0,255,65,0.16);}
+.prp-code-hint{font-size:10px;color:var(--text-dim);line-height:1.6;}
+.prp-enter-btn{width:100%;padding:14px;background:linear-gradient(135deg,#003311,#005522);border:1px solid var(--omni);border-radius:3px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:var(--omni);letter-spacing:3px;transition:all 0.3s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.prp-enter-btn:hover:not(:disabled){box-shadow:0 0 30px rgba(0,255,65,0.2);}
+.prp-enter-btn:disabled{opacity:0.4;cursor:not-allowed;}
+/* Join panel */
+.prp-join-input{width:100%;background:rgba(0,255,65,0.03);border:1px solid rgba(0,255,65,0.2);border-radius:3px;padding:14px 18px;color:var(--text);font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;letter-spacing:8px;text-align:center;text-transform:uppercase;outline:none;transition:border-color 0.2s;margin-bottom:8px;-webkit-appearance:none;}
+.prp-join-input:focus{border-color:var(--omni);box-shadow:0 0 0 2px rgba(0,255,65,0.07);}
+.prp-join-input::placeholder{letter-spacing:4px;font-size:14px;color:var(--text-dim);}
+.prp-err{font-size:10px;color:var(--red);font-family:'Orbitron',sans-serif;letter-spacing:1px;min-height:16px;margin-bottom:10px;}
+.prp-back{display:block;margin:14px auto 0;background:none;border:none;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:9px;color:rgba(0,255,65,0.25);letter-spacing:2px;padding:6px 14px;transition:all 0.3s;touch-action:manipulation;}
+.prp-back:hover{color:rgba(0,255,65,0.6);}
+
+/* Room indicator in chat header */
+.room-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:rgba(0,255,65,0.06);border:1px solid rgba(0,255,65,0.15);border-radius:2px;font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;color:var(--text-dim);cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.room-badge:hover{background:rgba(0,255,65,0.1);color:var(--omni);}
+.room-badge.private{border-color:rgba(255,204,0,0.25);color:rgba(255,204,0,0.7);}
+.room-badge.global{border-color:rgba(0,221,255,0.25);color:rgba(0,221,255,0.7);}
+
 /* RATE LIMIT */
 .rate-overlay{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,10,5,0.97);font-family:'Orbitron',sans-serif;backdrop-filter:blur(8px);}
 .rate-overlay.show{display:flex;}
@@ -512,6 +594,78 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
     <button class="btn-admin" id="btn-admin-login" title="Admin access">⬡ ADMIN ⬡</button>
   </div>
 </div>
+<!-- ROOM SELECTION SCREEN -->
+<div id="room-select-screen" role="main" aria-label="Choose chat room">
+  <div class="room-select-card">
+    <div class="rs-header">
+      <div class="rs-welcome">OPERATIVE AUTHENTICATED</div>
+      <div class="rs-callsign" id="rs-callsign-display">OPERATIVE</div>
+      <div class="rs-subtitle">SELECT YOUR FREQUENCY</div>
+    </div>
+    <div class="rs-divider"><span class="rs-divider-txt">TRANSMISSION CHANNELS</span></div>
+    <div class="room-option video-opt" id="btn-join-global" role="button" tabindex="0" aria-label="Join Global Chat">
+      <div class="room-opt-icon">🌐</div>
+      <div class="room-opt-body">
+        <div class="room-opt-title">GLOBAL CHAT</div>
+        <div class="room-opt-desc">Open channel — join instantly. All operatives on the platform share this frequency. No code needed.</div>
+        <div class="room-opt-tags">
+          <span class="room-opt-tag">PUBLIC</span>
+          <span class="room-opt-tag">INSTANT JOIN</span>
+          <span class="room-opt-tag">ALL USERS</span>
+        </div>
+      </div>
+      <div class="room-opt-arrow">›</div>
+    </div>
+    <div class="room-option" id="btn-join-private" role="button" tabindex="0" aria-label="Private Group Chat">
+      <div class="room-opt-icon">🔒</div>
+      <div class="room-opt-body">
+        <div class="room-opt-title">PRIVATE ROOM</div>
+        <div class="room-opt-desc">Create a secure room and share the code with your team. Only those with the code can enter.</div>
+        <div class="room-opt-tags">
+          <span class="room-opt-tag">ENCRYPTED</span>
+          <span class="room-opt-tag">INVITE ONLY</span>
+          <span class="room-opt-tag">ROOM CODE</span>
+        </div>
+      </div>
+      <div class="room-opt-arrow">›</div>
+    </div>
+    <button class="rs-back-btn" id="rs-back-btn">⬡ CHANGE CALLSIGN ⬡</button>
+  </div>
+</div>
+
+<!-- PRIVATE ROOM PANEL -->
+<div id="private-room-panel" role="dialog" aria-modal="true" aria-label="Private room setup">
+  <div class="prp-card">
+    <div class="prp-title">🔒 PRIVATE ROOM</div>
+    <div class="prp-sub">SECURE ENCRYPTED CHANNEL</div>
+    <div class="prp-tabs">
+      <button class="prp-tab active" data-prp-tab="create" id="prp-tab-create">⊕ CREATE ROOM</button>
+      <button class="prp-tab" data-prp-tab="join" id="prp-tab-join">⊞ ENTER CODE</button>
+    </div>
+    <!-- Create panel -->
+    <div class="prp-panel active" id="prp-panel-create">
+      <button class="prp-create-btn" id="prp-generate-btn">⬡ GENERATE ROOM CODE ⬡</button>
+      <div class="prp-room-code-wrap" id="prp-code-wrap">
+        <div class="prp-code-label">YOUR ROOM CODE — SHARE WITH YOUR TEAM</div>
+        <div class="prp-code-display">
+          <span class="prp-code-value" id="prp-code-value">------</span>
+          <button class="prp-copy-btn" id="prp-copy-btn" aria-label="Copy room code">📋 COPY</button>
+        </div>
+        <div class="prp-code-hint">Share this code with operatives you want in your private room. The code expires when you leave.</div>
+        <button class="prp-enter-btn" id="prp-enter-own-btn">ENTER MY ROOM →</button>
+      </div>
+    </div>
+    <!-- Join panel -->
+    <div class="prp-panel" id="prp-panel-join">
+      <label class="field-label" for="prp-join-input" style="margin-bottom:8px;display:block">ENTER ROOM CODE</label>
+      <input class="prp-join-input" id="prp-join-input" type="text" placeholder="A1B2C3" maxlength="6" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="characters" enterkeyhint="go" aria-label="Room code">
+      <div class="prp-err" id="prp-join-err" role="alert"></div>
+      <button class="prp-enter-btn" id="prp-join-submit-btn" disabled>JOIN PRIVATE ROOM →</button>
+    </div>
+    <button class="prp-back" id="prp-back-btn">← BACK TO CHANNEL SELECT</button>
+  </div>
+</div>
+
 <div id="chatroom" role="application" aria-label="Galaxy Relay Chat">
   <div class="chat-layout">
     <aside class="sidebar" id="sidebar" aria-label="Online operatives">
@@ -552,7 +706,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
         <div class="room-icon" aria-hidden="true">🌌</div>
         <div class="room-info">
           <div class="room-title">GALAXY RELAY</div>
-          <div class="room-sub" id="chat-sub" aria-live="polite">LOADING...</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div class="room-sub" id="chat-sub" aria-live="polite">LOADING...</div>
+            <div class="room-badge" id="room-badge" title="Click to see room info">🌐 GLOBAL</div>
+          </div>
         </div>
         <div class="top-bar-actions">
           <button class="btn-topbar-call" title="Voice Call" aria-label="Start voice call" onclick="initiateCall('voice')">🎙️</button>
